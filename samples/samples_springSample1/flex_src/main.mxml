@@ -26,7 +26,7 @@
 			
 			private function initApp():void
 			{
-				var _flexChannel:Channel = new AMFChannel("my-amf", "http://localhost:8080/andiPowellApp2/messagebroker/amf");			
+				var _flexChannel:Channel = new AMFChannel("my-amf", "http://localhost:8080/DPHibernate/messagebroker/amf");			
 					_flexChannelSet = new ChannelSet();
 					_flexChannelSet.addChannel(_flexChannel);
 					
@@ -34,6 +34,7 @@
 			}
 
 			[Bindable] public var carts:ArrayCollection = new ArrayCollection();
+			[Bindable] private var _currentItem:Item;
 
 			public function onResult(event:ResultEvent):void
 			{
@@ -62,13 +63,18 @@
 					token.operation = "getCarts";					
 			}
 			
-			private function saveItem(item:Item):void{
-				storeService.saveItem(item);
+			private function saveCurrentItem():void{
+				storeService.saveItem(_currentItem);
+				_currentItem = new Item();
 			}
 			
 			private function saveCart(cart:Cart):void{
 				var token:AsyncToken = storeService.saveCart(cart);
 					token.operation = "saveCart";
+			}
+			
+			private function onItemGridClick(e:MouseEvent):void{
+				this._currentItem = this.itemList.selectedItem as Item;
 			}
 			
 			
@@ -106,12 +112,40 @@
 	<mx:DataGrid
 		id="itemList"
 		dataProvider="{cartList.selectedItem.items}"
-		width="100%">		
+		width="100%"
+		click="onItemGridClick(event)">		
 		<mx:columns>
 				<mx:DataGridColumn headerText="name" dataField="name"/>
 				<mx:DataGridColumn headerText="sku" dataField="sku"/>
 		</mx:columns>
 	</mx:DataGrid>
+	<mx:Canvas width="100%" height="200">
+		<mx:HBox width="100%" top="0" left="0" height="100%">
+			<mx:Panel width="49%" height="100%" layout="absolute" left="0" title="Item Detail">
+				<mx:VBox>
+					<mx:HBox>
+						<mx:Label text="Item Name: "/>
+						<mx:TextInput id="itemName" text="{_currentItem.name}"/>
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Item SKU: "/>
+						<mx:TextInput id="itemSKU" text="{_currentItem.sku}"/>
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Item Price: "/>
+						<mx:TextInput id="itemPrice" text="{_currentItem.price}"/>
+					</mx:HBox>
+					<mx:HBox>
+						<mx:Label text="Item Expires: "/>
+						<mx:DateField id="itemExpires" selectedDate="{_currentItem.expires}"/>
+					</mx:HBox>
+					<mx:Button id="saveItemBtn" label="Save Item" click="saveCurrentItem()"/>
+				</mx:VBox>
+			</mx:Panel>
+			<mx:Panel width="49%" height="100%" layout="absolute" right="0" title="Add Item To Cart">
+			</mx:Panel>
+		</mx:HBox>
+	</mx:Canvas>
 	
 	
 </mx:Application>
