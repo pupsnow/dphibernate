@@ -23,6 +23,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -102,9 +103,14 @@ public class HibernateDeserializer implements IDeserializer
 
 	private boolean isSimple(Object obj)
 	{
-		return ((obj instanceof String) || (obj instanceof Boolean) || (obj instanceof Integer) || (obj instanceof Float) || (obj instanceof Double));
+		return ((obj instanceof String) 
+				|| (obj instanceof Boolean) 
+				|| (obj instanceof Integer) 
+				|| (obj instanceof Float) 
+				|| (obj instanceof Date) 
+				|| (obj instanceof Double));
 	}
-
+	
 
 	private Object invokeLoad(Object obj)
 	{
@@ -128,9 +134,11 @@ public class HibernateDeserializer implements IDeserializer
 			}
 
 			remotingMessage.setParameters(args);
-		} catch (ClassNotFoundException ex)
+		} 
+		catch (ClassNotFoundException ex)
 		{
 			ex.printStackTrace();
+			throw new RuntimeException(ex);
 		}
 
 		Object result = this.adapter.superInvoke(this.remotingMessage);
@@ -156,9 +164,11 @@ public class HibernateDeserializer implements IDeserializer
 					}
 				}
 			}
-		} catch (Exception ex)
+		} 
+		catch (Exception ex)
 		{
 			ex.printStackTrace();
+			throw new RuntimeException(ex);
 		}
 		return obj;
 	}
