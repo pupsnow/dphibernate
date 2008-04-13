@@ -6,6 +6,8 @@ import com.universalmind.hStore.model.vo.Item;
 
 public interface IItemDAO {
 
+	public abstract Item merge(Item item);
+
 	public abstract Item create(Item item);
 
 	public abstract Item read(String id);

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"  
    	creationComplete="initApp()">
 	
@@ -33,6 +32,7 @@
 				storeService.channelSet = _flexChannelSet;	
 			}
 
+			[Bindable] public var allItems:ArrayCollection = new ArrayCollection();
 			[Bindable] public var carts:ArrayCollection = new ArrayCollection();
 			[Bindable] private var _currentItem:Item;
 
@@ -44,7 +44,11 @@
 				}			
 				else if( event.token.operation == "saveItem" )
 				{
-					doGetAllItems();
+					doGetAllCarts();
+				}	
+				else if( event.token.operation == "getItems" )
+				{
+					allItems = event.result as ArrayCollection;
 				}	
 			}
 			
@@ -61,10 +65,17 @@
 			}
 			
 			
-			private function doGetAllItems():void
+			private function doGetAllCarts():void
 			{
 				var token:AsyncToken = storeService.getAllCarts();
 					token.operation = "getCarts";					
+			}
+			
+			
+			private function doGetAllItems():void
+			{
+				var token:AsyncToken = storeService.getAllItems();
+					token.operation = "getItems";					
 			}
 			
 			private function saveCurrentItem():void{
@@ -100,19 +111,39 @@
 			label="ResetDB"
 			click="doResetDb()"/>	
 		<mx:Button
-			label="Load/Refresh"
-			click="doGetAllItems()"/>	
+			label="Load/Refresh Carts"
+			click="doGetAllCarts()"/>	
+		<!--
+		<mx:Button
+			label="Get All Items"
+			click="doGetAllItems()"/>
+		-->	
 	</mx:HBox>
 	
-	<mx:DataGrid
-		id="cartList"
-		dataProvider="{carts}"
-		width="100%">		
-		<mx:columns>
-				<mx:DataGridColumn headerText="orderID" dataField="orderID"/>
-				<mx:DataGridColumn headerText="total" dataField="total"/>
-		</mx:columns>
-	</mx:DataGrid>
+	
+	<mx:HBox width="100%">		
+		<mx:DataGrid
+			id="cartList"
+			dataProvider="{carts}"
+			width="100%">		
+			<mx:columns>
+					<mx:DataGridColumn headerText="orderID" dataField="orderID"/>
+					<mx:DataGridColumn headerText="total" dataField="total"/>
+			</mx:columns>
+		</mx:DataGrid>
+		
+		<!--
+		<mx:DataGrid
+			id="allItemList"
+			dataProvider="{allItems}"
+			width="100%">		
+			<mx:columns>
+					<mx:DataGridColumn headerText="name" dataField="name"/>
+					<mx:DataGridColumn headerText="sku" dataField="sku"/>
+			</mx:columns>
+		</mx:DataGrid>
+		-->
+	</mx:HBox>
 	
 	<mx:DataGrid
 		id="itemList"

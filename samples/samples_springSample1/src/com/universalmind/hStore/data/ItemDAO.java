@@ -15,6 +15,14 @@ public class ItemDAO extends HibernateDaoSupport implements IItemDAO {
 	/* (non-Javadoc)
 	 * @see com.universalmind.hStore.data.IItemDAO#create(com.universalmind.hStore.model.vo.Item)
 	 */
+	public Item merge(Item item){
+		Item _item = (Item) getHibernateTemplate().merge(item);
+		return _item;
+	}
+	
+	/* (non-Javadoc)
+	 * @see com.universalmind.hStore.data.IItemDAO#create(com.universalmind.hStore.model.vo.Item)
+	 */
 	public Item create(Item item){
 		String id = (String) getHibernateTemplate().save(item);
 		return (Item) read(id);

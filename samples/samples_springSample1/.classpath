@@ -23,7 +23,6 @@
 	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/xalan.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Hibernate"/>
-	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/dpHibernate1.0.3.jar" sourcepath="/dpHibernate_hibernateAdapter/src"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="lib" path="C:/tomcat/Tomcat6.0/lib/servlet-api.jar"/>
 	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>

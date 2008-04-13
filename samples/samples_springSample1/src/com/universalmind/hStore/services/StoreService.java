@@ -81,12 +81,16 @@ public class StoreService //nimer: remove extends
 	}
 	
 	public Item saveItem(Item item){
+		
+		return this.itemDAO.merge(item);
+		/*
 		if(item.getId().length() == 0)
 			return this.itemDAO.create(item);
 		else{
 			this.itemDAO.update(item);
 			return null;			
 		}
+		 */
 			
 	}
 	
