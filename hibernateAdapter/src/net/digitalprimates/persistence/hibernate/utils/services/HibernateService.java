@@ -247,6 +247,12 @@ public class HibernateService
     
     public List executeSql(String sql)
     {
+    	return executeSql(sql, null);
+    }
+    
+    
+    public List executeSql(String sql, Class entity )
+    {
         Session session = null;
         List result = new ArrayList();
 
@@ -257,6 +263,11 @@ public class HibernateService
             long tStart = new Date().getTime(); 
             
                 SQLQuery query = session.createSQLQuery(sql);
+                if( entity != null )
+                {
+                	query.addEntity(entity);
+                }
+                
                 result = query.list();
             
             long tEnd = new Date().getTime();

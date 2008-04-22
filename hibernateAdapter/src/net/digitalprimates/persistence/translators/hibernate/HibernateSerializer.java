@@ -42,6 +42,7 @@ import org.hibernate.event.EventSource;
 import org.hibernate.impl.SessionImpl;
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
+import org.hibernate.persister.collection.OneToManyPersister;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.sql.SimpleSelect;
 
@@ -149,7 +150,8 @@ public class HibernateSerializer implements ISerializer
 			BeanInfo info = Introspector.getBeanInfo(obj.getClass());
 			for (PropertyDescriptor pd : info.getPropertyDescriptors())
 			{
-				propName = pd.getName(); System.out.println("propName=" +propName);
+				propName = pd.getName(); 
+				//System.out.println("propName=" +propName);
 				if (!"class".equals(propName) && !"annotations".equals(propName) && !"hibernateLazyInitializer".equals(propName))
 				{
 					Object val = pd.getReadMethod().invoke(obj, null);
@@ -346,12 +348,15 @@ public class HibernateSerializer implements ISerializer
 	private List getPkIds(SessionImplementor session, CollectionPersister persister, PersistentCollection collection) throws ClassNotFoundException
 	{
 		AbstractCollectionPersister absPersister = (AbstractCollectionPersister) persister;
-
-		String[] keyNames = absPersister.getElementColumnNames();// getKeyColumnNames();
-		String[] columnNames = absPersister.getElementColumnNames();
-
-		String className = absPersister.getElementType().getName();
-		Class clazz = Class.forName(className);
+		String[] keyNames;
+		
+		if( absPersister instanceof OneToManyPersister )
+		{
+			keyNames = absPersister.getElementColumnNames();
+		}else{
+			keyNames = absPersister.getKeyColumnNames();			
+		}
+		//String[] columnNames = absPersister.getElementColumnNames();
 
 		SimpleSelect pkSelect = new SimpleSelect(((SessionImpl) session).getFactory().getDialect());
 		pkSelect.setTableName(absPersister.getTableName());
