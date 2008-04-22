@@ -1,6 +1,6 @@
 <project name="javaHibernate" default="jar">
 
-    <property name="version" value="1.0.5"/>
+    <property name="version" value="1.0.6"/>
     <property name="sourcedir" value="${basedir}/src"/>
     <property name="bindir" value="${basedir}/bin"/>
     <property name="generateddir" value="${basedir}/build"/>
