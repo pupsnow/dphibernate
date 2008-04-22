@@ -101,7 +101,7 @@ package net.digitalprimates.flex2.mx.utils
 							if ( property != 'list' ) {
 								valueObj[ property ] = populateVO( genericObj[ property ], voHelper.elementClass, null, dictionary );
 							} else {
-								trace("break here");
+								//trace("break here");
 							}
 						} else {								
 							valueObj[ property ] = ObjectUtil.copy( genericObj[ property ] );

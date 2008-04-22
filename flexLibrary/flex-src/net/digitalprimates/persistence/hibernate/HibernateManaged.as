@@ -19,12 +19,11 @@
 package net.digitalprimates.persistence.hibernate 
 {
 	
-	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
 	import flash.utils.*;
 	
 	import mx.collections.ArrayCollection;
-	import mx.collections.errors.ItemPendingError;
 	import mx.core.IPropertyChangeNotifier;
 	import mx.events.PropertyChangeEvent;
 	import mx.rpc.AsyncToken;
@@ -34,6 +33,7 @@ package net.digitalprimates.persistence.hibernate
 	import mx.utils.ObjectUtil;
 	
 	import net.digitalprimates.flex2.mx.utils.ValueObjectUtil;
+	import net.digitalprimates.persistence.events.LazyLoadEvent;
 	
 	public class HibernateManaged 
 	{
@@ -138,6 +138,10 @@ package net.digitalprimates.persistence.hibernate
 				return value;
 			} 
 
+			if ( obj is EventDispatcher ) {
+				EventDispatcher( obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.pending, true, true ) );
+			}
+
 			return obj;
 		}
 
@@ -210,10 +214,20 @@ package net.digitalprimates.persistence.hibernate
 			enableServerCalls(token.ro as IHibernateRPC );
 
 			setProperty( token.obj, token.property, token.oldValue, event.result, token.parent, token.parentProperty )
+
+			if ( token.obj is EventDispatcher ) {
+				EventDispatcher( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.complete, true, true ) );
+			}
 		}
 
 		public static function lazyLoadFailed( event:FaultEvent ):void {
 			trace("Lazy load failed");
+
+			var token:AsyncToken = event.token;
+
+			if ( token && token.obj && token.obj is EventDispatcher ) {
+				EventDispatcher( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.failed, true, true ) );
+			}
 		}
 
 		public static function addHibernateResponder( ro:IHibernateRPC, token:AsyncToken ):void {

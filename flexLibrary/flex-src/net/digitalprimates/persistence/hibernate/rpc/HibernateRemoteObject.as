@@ -35,6 +35,12 @@ use namespace mx_internal;
 
 	dynamic public class HibernateRemoteObject extends RemoteObject implements IHibernateRPC
 	{
+		
+		public function HibernateRemoteObject(destination:String = null)
+		{
+	        super(destination);
+	    }
+		
 		public function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken {
 	    	return this.loadDPProxy( proxyKey, hibernateProxy );
 		}
