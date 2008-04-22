@@ -37,6 +37,7 @@ public class SerializeOneToMany
     	HibernateUtil.getCurrentSession();
     	HibernateUtil.beginTransaction();
     	
+    	
         u1 = new O2MPerson();
         u1.firstName = "test 1";
         u1.lastName = "user 1";
