@@ -4,11 +4,13 @@
     <classEntry path="mx.data.IManaged"/>
     <classEntry path="mx.data.utils.Managed"/>
     <classEntry path="net.digitalprimates.flex2.mx.utils.ValueObjectUtil"/>
+    <classEntry path="net.digitalprimates.persistence.events.LazyLoadEvent"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateBean"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManagedEntry"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateProxy"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateProxy"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateRPC"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
   </includeClasses>
   <includeResources>
