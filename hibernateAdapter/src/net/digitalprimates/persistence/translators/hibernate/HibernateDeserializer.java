@@ -66,7 +66,12 @@ public class HibernateDeserializer implements IDeserializer
 
 	private Object translate(Object obj)
 	{
-
+		return translate(obj, null);
+	}
+	
+	
+	private Object translate(Object obj, Class type)
+	{
 		if (cache.containsKey(obj))
 		{
 			return obj;
@@ -89,7 +94,7 @@ public class HibernateDeserializer implements IDeserializer
 		} 
 		else if (obj instanceof Collection)
 		{
-			return readCollection(obj);
+			return readCollection(obj, type);
 		} 
 		else if (obj instanceof Object && (!isSimple(obj)) && !(obj instanceof ASObject))
 		{
@@ -159,7 +164,7 @@ public class HibernateDeserializer implements IDeserializer
 					Object val = pd.getReadMethod().invoke(obj, null);
 					if (val != null)
 					{
-						Object newVal = translate(val);
+						Object newVal = translate(val, pd.getPropertyType());
 						pd.getWriteMethod().invoke(obj, newVal);
 					}
 				}
@@ -174,16 +179,15 @@ public class HibernateDeserializer implements IDeserializer
 	}
 
 
-	private Object readCollection(Object obj)
+	private Object readCollection(Object obj, Class type)
 	{
 		List items = new ArrayList();
 		Iterator itr = ((Collection) obj).iterator();
 		while (itr.hasNext())
 		{
 			Object o = itr.next();
-			Object newVal = translate(o);
+			Object newVal = translate(o, type);
 			items.add(newVal);
-
 		}
 		return items;
 	}

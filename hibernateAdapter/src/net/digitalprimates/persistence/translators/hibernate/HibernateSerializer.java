@@ -22,6 +22,7 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
+import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 import net.digitalprimates.persistence.translators.ISerializer;
 
 import org.hibernate.Query;
@@ -45,6 +47,7 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.OneToManyPersister;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.sql.SimpleSelect;
+import org.w3c.dom.Document;
 
 import flex.messaging.io.amf.ASObject;
 
@@ -81,7 +84,7 @@ public class HibernateSerializer implements ISerializer
 		{
 			return cache.get(key);
 		}
-
+		
 		// System.out.println("{Serializer}");
 		Boolean isLazyProxy = obj instanceof HibernateProxy && (((HibernateProxy) obj).getHibernateLazyInitializer().isUninitialized());
 		if (isLazyProxy)
@@ -100,6 +103,10 @@ public class HibernateSerializer implements ISerializer
 		{
 			result = writeCollection(obj, key);
 		} 
+		else if( obj instanceof IHibernateProxy )
+		{
+			result = writeBean(obj, result, key);
+		}
 		else if (obj instanceof Object 
 				&& (!isSimple(obj)) 
 				&& !(obj instanceof ASObject))
@@ -118,12 +125,15 @@ public class HibernateSerializer implements ISerializer
 
 	private boolean isSimple(Object obj)
 	{
-		return ((obj instanceof String) 
+		return ((obj == null) 
+				|| (obj instanceof String) 
+				|| (obj instanceof Character) 
 				|| (obj instanceof Boolean) 
-				|| (obj instanceof Integer) 
-				|| (obj instanceof Float) 
+				|| (obj instanceof Number) 
 				|| (obj instanceof Date) 
-				|| (obj instanceof Double));
+				|| (obj instanceof Calendar)
+				|| (obj instanceof Document));
+		
 	}
 
 
