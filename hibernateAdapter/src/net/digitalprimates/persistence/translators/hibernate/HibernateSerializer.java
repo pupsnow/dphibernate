@@ -21,6 +21,8 @@ package net.digitalprimates.persistence.translators.hibernate;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -47,6 +49,20 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.collection.OneToManyPersister;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.sql.SimpleSelect;
+import org.hibernate.transform.PassThroughResultTransformer;
+import org.hibernate.type.BigIntegerType;
+import org.hibernate.type.BooleanType;
+import org.hibernate.type.ByteType;
+import org.hibernate.type.CalendarType;
+import org.hibernate.type.CharacterType;
+import org.hibernate.type.DateType;
+import org.hibernate.type.DbTimestampType;
+import org.hibernate.type.IntegerType;
+import org.hibernate.type.LongType;
+import org.hibernate.type.ShortType;
+import org.hibernate.type.StringType;
+import org.hibernate.type.TimestampType;
+import org.hibernate.type.Type;
 import org.w3c.dom.Document;
 
 import flex.messaging.io.amf.ASObject;
@@ -360,7 +376,7 @@ public class HibernateSerializer implements ISerializer
 		AbstractCollectionPersister absPersister = (AbstractCollectionPersister) persister;
 		String[] keyNames;
 		
-		if( absPersister instanceof OneToManyPersister )
+		if( absPersister.isOneToMany() )
 		{
 			keyNames = absPersister.getElementColumnNames();
 		}else{
@@ -376,8 +392,35 @@ public class HibernateSerializer implements ISerializer
 		String sql = pkSelect.toStatementString();
 
 		// int size = absPersister.getSize(collection.getKey(), eventSession);
-		Query q2 = ((SessionImpl) session).createSQLQuery(sql).setParameter(0, collection.getKey());
-		List results = q2.list();
+		Query q2 = ((SessionImpl) session).createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
+		
+		List hibernateResults = q2.list(); 
+		//return results;
+		
+		Type t = persister.getKeyType();
+		List results = new ArrayList();
+		try
+		{
+			PreparedStatement stmt = ((SessionImpl) session).connection().prepareStatement(sql);
+			if( t instanceof StringType ){
+				stmt.setString(1, collection.getKey().toString());
+			}
+			else {
+				stmt.setObject(1, new Integer(collection.getKey().toString()).intValue());
+			}
+				
+			ResultSet keyResults = stmt.executeQuery();
+			
+			while( keyResults.next() )
+			{
+				results.add( keyResults.getObject(1) );
+			}
+			
+		}catch( Exception ex )
+		{
+			ex.printStackTrace();
+		}
+		
 		return results;
 	}
 
