@@ -23,9 +23,9 @@
     </default-channels>
 
 	
-	<destination id="sample1">
+	<destination id="testService">
 		<properties>
-			<source>net.digitalprimates.samples.sample1.TestService</source>
+			<source>services.TestService</source>
 			<scope>request</scope>
 			<hibernate>
 				<!--
