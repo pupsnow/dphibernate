@@ -183,7 +183,8 @@ public class HibernateSerializer implements ISerializer
 			{
 				propName = pd.getName(); 
 				//System.out.println("propName=" +propName);
-				if (!"class".equals(propName) && !"annotations".equals(propName) && !"hibernateLazyInitializer".equals(propName))
+				if (!"handler".equals(propName) && !"class".equals(propName) 
+						&& !"annotations".equals(propName) && !"hibernateLazyInitializer".equals(propName))
 				{
 					Object val = pd.getReadMethod().invoke(obj, null);
 					Object newVal = translate(val);
