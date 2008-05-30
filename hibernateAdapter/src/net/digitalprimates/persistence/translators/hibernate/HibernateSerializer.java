@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -119,6 +120,10 @@ public class HibernateSerializer implements ISerializer
 		{
 			result = writeCollection(obj, key);
 		} 
+		else if (obj instanceof Map)
+		{
+			result = writeMap(obj, key);
+		} 
 		else if( obj instanceof IHibernateProxy )
 		{
 			result = writeBean(obj, result, key);
@@ -207,6 +212,25 @@ public class HibernateSerializer implements ISerializer
 			list.add(translate(o));
 		}
 		result = list;
+		return result;
+	}
+	
+	
+	private Object writeMap(Object obj, Object key)
+	{
+		Object result;
+		ASObject asObj = new ASObject();
+		cache.put(key, asObj);
+		
+		Set keys = ((Map) obj).keySet();
+		Iterator keysItr = keys.iterator();
+		while (keysItr.hasNext())
+		{
+			Object thisKey = keysItr.next();
+			Object o = ((Map) obj).get(thisKey);
+			asObj.put(thisKey, translate(o));
+		}
+		result = asObj;
 		return result;
 	}
 
