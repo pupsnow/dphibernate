@@ -22,12 +22,14 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import org.hibernate.collection.PersistentCollection;
+import org.w3c.dom.Document;
 
 import flex.messaging.io.amf.ASObject;
 import flex.messaging.messages.RemotingMessage;
@@ -72,12 +74,14 @@ public class HibernateDeserializer implements IDeserializer
 	
 	private Object translate(Object obj, Class type)
 	{
+	    
 		if (cache.containsKey(obj))
 		{
-			return obj;
+			return cache.get(obj);
 		}
-		cache.put(obj, true);
+		cache.put(obj, obj);
 
+	
 		if (obj == null || "java.lang.Class".equals(obj.getClass().getName()))
 		{
 			return obj;
@@ -85,20 +89,35 @@ public class HibernateDeserializer implements IDeserializer
 		else if (obj instanceof PersistentCollection && !((PersistentCollection) obj).wasInitialized())
 		{
 			Object pcResult = readPersistanceCollection(obj); 
+			
+			//replace cache with initialized item
+			cache.put(obj, pcResult);
+			
 			return pcResult;
 		} 
 		else if (obj != null && obj instanceof IHibernateProxy && !((IHibernateProxy) obj).getProxyInitialized())
 		{
 			Object hibResult = readHibernateProxy(obj);
+			
+			//replace cache with initialized item
+			cache.put(obj, hibResult);
+			
 			return hibResult;
 		} 
 		else if (obj instanceof Collection)
 		{
-			return readCollection(obj, type);
+			Object coll = readCollection(obj, type);
+			
+			//replace cache with initialized item
+			cache.put(obj, coll);
+			
+			return coll;
 		} 
 		else if (obj instanceof Object && (!isSimple(obj)) && !(obj instanceof ASObject))
 		{
-			Object bean = readBean(obj);
+			Object bean = readBean(obj); 
+			//replace cache with initialized item
+			cache.put(obj, bean);
 			return bean;
 		}
 
@@ -108,12 +127,15 @@ public class HibernateDeserializer implements IDeserializer
 
 	private boolean isSimple(Object obj)
 	{
-		return ((obj instanceof String) 
+		return ((obj == null) 
+				|| (obj instanceof String) 
+				|| (obj instanceof Character) 
 				|| (obj instanceof Boolean) 
-				|| (obj instanceof Integer) 
-				|| (obj instanceof Float) 
+				|| (obj instanceof Number) 
 				|| (obj instanceof Date) 
-				|| (obj instanceof Double));
+				|| (obj instanceof Calendar)
+				|| (obj instanceof Document));
+		
 	}
 	
 

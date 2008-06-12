@@ -221,6 +221,8 @@ public class HibernateSerializer implements ISerializer
 	{
 		Object result;
 		ASObject asObj = new ASObject();
+		asObj.setType( getClassName(obj) );
+		
 		cache.put(key, asObj);
 		
 		Set keys = ((Map) obj).keySet();
@@ -329,7 +331,11 @@ public class HibernateSerializer implements ISerializer
 
 	private String getClassName(Object obj)
 	{
-		if (obj instanceof HibernateProxy)
+		if( obj instanceof ASObject )
+		{
+			return ((ASObject)obj).getType();
+		}
+		else if (obj instanceof HibernateProxy)
 		{
 			return ((HibernateProxy) obj).getHibernateLazyInitializer().getPersistentClass().getName().toString();
 		} else
