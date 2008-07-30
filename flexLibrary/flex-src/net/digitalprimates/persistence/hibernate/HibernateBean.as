@@ -19,6 +19,8 @@
 
 package net.digitalprimates.persistence.hibernate 
 {
+	import flash.events.EventDispatcher;
+	
 	public class HibernateBean implements IHibernateProxy 
 	{
 		private var __proxyKey:Object;

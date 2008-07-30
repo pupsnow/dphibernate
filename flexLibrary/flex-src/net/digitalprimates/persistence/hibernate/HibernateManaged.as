@@ -138,8 +138,8 @@ package net.digitalprimates.persistence.hibernate
 				return value;
 			} 
 
-			if ( obj is EventDispatcher ) {
-				EventDispatcher( obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.pending, true, true ) );
+			if ( obj is IEventDispatcher ) {
+				IEventDispatcher( obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.pending, true, true ) );
 			}
 
 			return obj;
@@ -149,6 +149,12 @@ package net.digitalprimates.persistence.hibernate
 
 			var ro:IHibernateRPC;
 			var entry:HibernateManagedEntry = hibernateDictionary[ obj ] as HibernateManagedEntry
+			
+			if( entry == null )
+			{
+				return value;
+			}
+			
 			ro = entry.ro;
 
 			if ( obj.proxyInitialized ) {
@@ -215,8 +221,8 @@ package net.digitalprimates.persistence.hibernate
 
 			setProperty( token.obj, token.property, token.oldValue, event.result, token.parent, token.parentProperty )
 
-			if ( token.obj is EventDispatcher ) {
-				EventDispatcher( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.complete, true, true ) );
+			if ( token.obj is IEventDispatcher ) {
+				IEventDispatcher ( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.complete, true, true ) );
 			}
 		}
 
@@ -225,8 +231,8 @@ package net.digitalprimates.persistence.hibernate
 
 			var token:AsyncToken = event.token;
 
-			if ( token && token.obj && token.obj is EventDispatcher ) {
-				EventDispatcher( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.failed, true, true ) );
+			if ( token && token.obj && token.obj is IEventDispatcher  ) {
+				IEventDispatcher ( token.obj ).dispatchEvent( new LazyLoadEvent( LazyLoadEvent.failed, true, true ) );
 			}
 		}
 
