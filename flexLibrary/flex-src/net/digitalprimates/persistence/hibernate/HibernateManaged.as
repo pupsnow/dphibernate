@@ -19,7 +19,6 @@
 package net.digitalprimates.persistence.hibernate 
 {
 	
-	import flash.events.EventDispatcher;
 	import flash.events.IEventDispatcher;
 	import flash.utils.*;
 	
@@ -30,6 +29,8 @@ package net.digitalprimates.persistence.hibernate
 	import mx.rpc.Responder;
 	import mx.rpc.events.FaultEvent;
 	import mx.rpc.events.ResultEvent;
+	import mx.utils.DescribeTypeCache;
+	import mx.utils.DescribeTypeCacheRecord;
 	import mx.utils.ObjectUtil;
 	
 	import net.digitalprimates.flex2.mx.utils.ValueObjectUtil;
@@ -68,7 +69,6 @@ package net.digitalprimates.persistence.hibernate
 	    }
 
 	    public static function manageChildHibernateObjects( object:Object, parent:Object = null, propertyName:String=null, ro:IHibernateRPC=null ):void {
-			var className:String = getQualifiedClassName( object );
 			var entry:XML; 
 			var accessors:XMLList
 
@@ -83,13 +83,11 @@ package net.digitalprimates.persistence.hibernate
 
 			recursionWatch[ object ] = true;
 
-			if ( !objectTypeMap[ className ] ) {
-				var description:XML = describeType( object );
-				objectTypeMap[ className ] = description; 
+			if ( !( object is String ) ) {
+				var cacheRecord:DescribeTypeCacheRecord = DescribeTypeCache.describeType( object );
+				entry = cacheRecord.typeDescription;				
+				accessors = entry.accessor;
 			}
-
-			entry = objectTypeMap[ className ] as XML;
-			accessors = entry.accessor;
 
 	    	if ( object is IHibernateProxy ) {
 				manageHibernateObject( IHibernateProxy( object ), parent, propertyName, ro ); 
@@ -112,6 +110,14 @@ package net.digitalprimates.persistence.hibernate
 
 		public static function manageHibernateObject( obj:IHibernateProxy, parent:Object, parentProperty:String, ro:IHibernateRPC ):void {
 			hibernateDictionary[ obj ] = new HibernateManagedEntry( ro, parent, parentProperty );
+
+			if ( ( obj is IPropertyChangeNotifier ) && parent ) {
+				( obj as IPropertyChangeNotifier).addEventListener(
+ 					PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
+
+				( obj as IPropertyChangeNotifier).addEventListener(
+ 					PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
+ 			}
 		}
 
 		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String=null, value:*=null):* {
@@ -181,6 +187,10 @@ package net.digitalprimates.persistence.hibernate
 			}
 		}
 		
+		public static function rebroadcastEvent( event:PropertyChangeEvent ):void {
+			trace( event.property + " propogating ");
+		}
+		
 		public static function setProperty(obj:IHibernateProxy, property:Object, oldValue:*, newValue:*, parent:Object=null, parentProperty:String=null ):void {
 
 			var dispatcher:IEventDispatcher = obj as IEventDispatcher;
@@ -188,10 +198,17 @@ package net.digitalprimates.persistence.hibernate
 			if ( ( oldValue is IPropertyChangeNotifier ) && parent ) {
 				oldValue.removeEventListener(
 					PropertyChangeEvent.PROPERTY_CHANGE,
+					rebroadcastEvent);
+				
+				oldValue.removeEventListener(
+					PropertyChangeEvent.PROPERTY_CHANGE,
 					parent.dispatchEvent);
 			}
 
 			if ( ( newValue is IPropertyChangeNotifier ) && parent ) {
+				newValue.addEventListener(
+ 					PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
+
 				newValue.addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
 			}
