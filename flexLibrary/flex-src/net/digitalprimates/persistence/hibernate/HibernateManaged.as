@@ -112,8 +112,10 @@ package net.digitalprimates.persistence.hibernate
 			hibernateDictionary[ obj ] = new HibernateManagedEntry( ro, parent, parentProperty );
 
 			if ( ( obj is IPropertyChangeNotifier ) && parent ) {
+				/*
 				( obj as IPropertyChangeNotifier).addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
+ 				*/ 
 
 				( obj as IPropertyChangeNotifier).addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
@@ -196,9 +198,11 @@ package net.digitalprimates.persistence.hibernate
 			var dispatcher:IEventDispatcher = obj as IEventDispatcher;
 
 			if ( ( oldValue is IPropertyChangeNotifier ) && parent ) {
+				/*
 				oldValue.removeEventListener(
 					PropertyChangeEvent.PROPERTY_CHANGE,
 					rebroadcastEvent);
+				*/
 				
 				oldValue.removeEventListener(
 					PropertyChangeEvent.PROPERTY_CHANGE,
@@ -206,8 +210,10 @@ package net.digitalprimates.persistence.hibernate
 			}
 
 			if ( ( newValue is IPropertyChangeNotifier ) && parent ) {
+				/*
 				newValue.addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
+ 				*/
 
 				newValue.addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
