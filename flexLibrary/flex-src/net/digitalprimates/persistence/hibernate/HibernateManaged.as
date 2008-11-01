@@ -33,7 +33,7 @@ package net.digitalprimates.persistence.hibernate
 	import mx.utils.DescribeTypeCacheRecord;
 	import mx.utils.ObjectUtil;
 	
-	import net.digitalprimates.flex2.mx.utils.ValueObjectUtil;
+	import net.digitalprimates.flex2.mx.utils.BeanUtil;
 	import net.digitalprimates.persistence.events.LazyLoadEvent;
 	
 	public class HibernateManaged 
@@ -123,7 +123,6 @@ package net.digitalprimates.persistence.hibernate
 		}
 
 		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String=null, value:*=null):* {
-
 			var repopulateResponder:Responder = new Responder( HibernateManaged.lazyLoadArrived, HibernateManaged.lazyLoadFailed );
 
 			var token:AsyncToken;
@@ -140,6 +139,7 @@ package net.digitalprimates.persistence.hibernate
 
 			token.parent = hibernateDictionary[ obj ].parent;
 			token.parentProperty = hibernateDictionary[ obj ].parentProperty;
+			trace( "Asking for Lazy Data for Property " + token.parentProperty );
 
 			//this is where we need to be cautious. We either need to give back a simple value or another proxy
 			if ( property ) {
@@ -168,7 +168,10 @@ package net.digitalprimates.persistence.hibernate
 			if ( obj.proxyInitialized ) {
 				//We need to check here if this particular item we are about to return is a proxy itself...
 				//If it is a proxy,then we probably need to go and instantiate it now
-
+/*
+				//I don't believe this is needed, this is occuring if we try to access the proxy itself
+				//At this point, we have not tried to access the children of the proxy, which is what
+				//should cause the lazy load
 				if ( ( value ) && ( value is IHibernateProxy ) && ( !IHibernateProxy(value).proxyInitialized ) ) {
 					if ( hibernateDictionary[ value ] ) {
 						if ( !pendingDictionary[ value ] && areServerCallsEnabled( ro ) ) {
@@ -177,7 +180,7 @@ package net.digitalprimates.persistence.hibernate
 						}
 					}
 				}
-				
+*/
 				return value;
 			} else {
 				if ( !pendingDictionary[ obj ] && areServerCallsEnabled( ro ) ) {
@@ -237,9 +240,11 @@ package net.digitalprimates.persistence.hibernate
 			disableServerCalls( token.ro as IHibernateRPC );
 			token.obj.proxyInitialized = true;
 
-			ValueObjectUtil.populateVO( event.result, classDef, token.obj, new Dictionary( true ) ); 
+			BeanUtil.populateBean( event.result, classDef, token.obj, new Dictionary( true ), token.parent, token.parentProperty, token.ro as IHibernateRPC );
+			//ValueObjectUtil.populateVO( event.result, classDef, token.obj, new Dictionary( true ) ); 
 
-			manageChildTree( token.obj, token.parent, token.property, token.ro as IHibernateRPC );
+			//In theory, this part would no longer be needed after the changes to populateBean
+			//manageChildTree( token.obj, token.parent, token.property, token.ro as IHibernateRPC );
 			enableServerCalls(token.ro as IHibernateRPC );
 
 			setProperty( token.obj, token.property, token.oldValue, event.result, token.parent, token.parentProperty )
@@ -270,6 +275,11 @@ package net.digitalprimates.persistence.hibernate
 
 			manageChildTree( event.result, null, null, event.token.ro );
 			enableServerCalls( event.token.ro );
+		}
+		
+		public static function repopulateObject( oldObject:IHibernateProxy, newObject:IHibernateProxy, classDef:Class ):void {
+			var existingEntry:HibernateManagedEntry = hibernateDictionary[ oldObject ] as HibernateManagedEntry;
+			BeanUtil.populateBean( newObject, classDef, oldObject, null, null, null, existingEntry.ro );			
 		}
 
 		protected static function handleHibernateFault( event:FaultEvent ):void {

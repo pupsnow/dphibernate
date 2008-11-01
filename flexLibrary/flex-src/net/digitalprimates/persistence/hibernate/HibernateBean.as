@@ -24,7 +24,7 @@ package net.digitalprimates.persistence.hibernate
 	public class HibernateBean implements IHibernateProxy 
 	{
 		private var __proxyKey:Object;
-		private var __proxyInitialized:Boolean = true;
+		private var __proxyInitialized:Boolean = false;
 
 		public function get proxyKey():Object {
 			return __proxyKey;
