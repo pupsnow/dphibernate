@@ -115,7 +115,7 @@ package net.digitalprimates.persistence.hibernate
 				/*
 				( obj as IPropertyChangeNotifier).addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
- 				*/ 
+ 				 */
 
 				( obj as IPropertyChangeNotifier).addEventListener(
  					PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
