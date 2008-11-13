@@ -67,8 +67,7 @@ public class HibernateService
         {
             session = HibernateUtil.getCurrentSession();
 
-            long tStart = new Date().getTime(); 
-            
+            long tStart = new Date().getTime();             
             if( criteria != null )
             {
                 result = criteria.getExecutableCriteria(session).list();                

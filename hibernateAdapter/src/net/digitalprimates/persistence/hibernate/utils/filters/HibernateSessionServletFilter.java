@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 
 import org.hibernate.Session;
 import org.hibernate.StaleObjectStateException;
+import org.hibernate.stat.SessionStatistics;
 
 
 /**
@@ -52,12 +53,13 @@ public class HibernateSessionServletFilter implements Filter
 
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
 	{
+		Session session = null;
 		try
 		{
 			log.debug("Starting a database transaction");
-			Session session = HibernateUtil.getCurrentSession();
+			session = HibernateUtil.getCurrentSession();
 			HibernateUtil.beginTransaction();
-
+			
 			// Call the next filter (continue request processing)
 			chain.doFilter(request, response);
 
@@ -102,7 +104,8 @@ public class HibernateSessionServletFilter implements Filter
 		} 
 		finally
 		{
-			HibernateUtil.closeSession();
+			//SessionStatistics statistics = session.getStatistics();
+			HibernateUtil.closeSession();			
 		}
 	}
 

@@ -62,7 +62,8 @@ public class HibernateDeserializer implements IDeserializer
 		this.remotingMessage = message;
 		this.loadMethod = loadMethod;
 
-		return translate(obj);
+		Object result = translate(obj);
+		return result;
 	}
 
 
@@ -218,13 +219,16 @@ public class HibernateDeserializer implements IDeserializer
 	private Object readHibernateProxy(Object obj)
 	{
 		Object newObj = invokeLoad(obj);
-		return translate(newObj);
+		return newObj;
 	}
 
 
 	private Object readPersistanceCollection(Object obj)
 	{
-		((PersistentCollection) obj).forceInitialization();
+		if( !((PersistentCollection) obj).wasInitialized() )
+		{
+			((PersistentCollection) obj).forceInitialization();
+		}
 		return translate(obj);
 	}
 

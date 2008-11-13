@@ -186,13 +186,28 @@ public class HibernateSerializer implements ISerializer
 				if (!"handler".equals(propName) && !"class".equals(propName) 
 						&& !"annotations".equals(propName) && !"hibernateLazyInitializer".equals(propName))
 				{
-					Object val = pd.getReadMethod().invoke(obj, null);
-					Object newVal = translate(val);
-					asObject.put(propName, newVal);
+					try
+					{
+						Object val = pd.getReadMethod().invoke(obj, null);
+						if( val == null )
+						{
+							asObject.put(propName, val);
+						}
+						else
+						{
+							Object newVal = translate(val);
+							asObject.put(propName, newVal);
+						}
+					} 
+					catch (Exception ex)
+					{
+						ex.printStackTrace();
+					}
 				}
 			}
 			result = asObject;
-		} catch (Exception ex)
+		} 
+		catch (Exception ex)
 		{
 			ex.printStackTrace();
 		}
@@ -204,7 +219,7 @@ public class HibernateSerializer implements ISerializer
 	{
 		Object result;
 		ArrayList list = new ArrayList();
-		cache.put(key, list);
+		//cache.put(key, list);
 
 		Iterator itr = ((Collection) obj).iterator();
 		while (itr.hasNext())
@@ -219,6 +234,11 @@ public class HibernateSerializer implements ISerializer
 	
 	private Object writeMap(Object obj, Object key)
 	{
+		if( obj instanceof ASObject )
+		{
+			return obj;
+		}
+		
 		Object result;
 		ASObject asObj = new ASObject();
 		asObj.setType( getClassName(obj) );
@@ -248,11 +268,12 @@ public class HibernateSerializer implements ISerializer
 			List proxies = getCollectionProxies(collection);
 
 			proxies = (List) translate(proxies);
-			cache.put(key, proxies);
-
 			result = proxies;
+			
+			cache.put(key, proxies);
 			// return proxies;
-		} else
+		}
+		else
 		{
 			Object c = collection.getValue();
 			List items = new ArrayList();
@@ -407,7 +428,7 @@ public class HibernateSerializer implements ISerializer
 		AbstractCollectionPersister absPersister = (AbstractCollectionPersister) persister;
 		String[] keyNames;
 		
-		if( absPersister.isOneToMany() )
+		if( absPersister.isOneToMany() || absPersister.isManyToMany() )
 		{
 			keyNames = absPersister.getElementColumnNames();
 		}else{
@@ -421,17 +442,19 @@ public class HibernateSerializer implements ISerializer
 		pkSelect.addCondition(absPersister.getKeyColumnNames(), "=?");
 
 		String sql = pkSelect.toStatementString();
-
-		// int size = absPersister.getSize(collection.getKey(), eventSession);
-		Query q2 = ((SessionImpl) session).createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
-		
-		List hibernateResults = q2.list(); 
-		//return results;
-		
-		Type t = persister.getKeyType();
 		List results = new ArrayList();
+		
 		try
 		{
+			// int size = absPersister.getSize(collection.getKey(), eventSession);
+			Query q2 = ((SessionImpl) session).createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
+			
+			List hibernateResults = q2.list(); 
+			//return results;
+			
+			Type t = persister.getKeyType();
+			
+			
 			PreparedStatement stmt = ((SessionImpl) session).connection().prepareStatement(sql);
 			if( t instanceof StringType ){
 				stmt.setString(1, collection.getKey().toString());

@@ -19,6 +19,7 @@
 package net.digitalprimates.persistence.hibernate;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import net.digitalprimates.persistence.translators.SerializationFactory;
@@ -53,7 +54,7 @@ public class HibernateAdapter extends JavaAdapter
 	 */
 	public void initialize(String id, ConfigMap properties)
 	{
-		// super.initialize();
+		super.initialize(id, properties);
 		if (properties == null || properties.size() == 0)
 			return;
 
@@ -151,15 +152,18 @@ public class HibernateAdapter extends JavaAdapter
 			 * factoryInstance.setSource(sourceClass); } }catch( Throwable ex ){
 			 * ex.printStackTrace();}
 			 */
-
+			System.out.println("{operation})****************" +remotingMessage.getOperation());
 			// Deserialize the incoming object data
 			List inArgs = remotingMessage.getParameters();
 			if (inArgs != null && inArgs.size() > 0)
 			{
 				try
 				{
-					Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), getLoadMethodName(), property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
-					remotingMessage.setParameters((List) o);
+					long s1 = new Date().getTime();
+						Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), getLoadMethodName(), property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
+						remotingMessage.setParameters((List) o);
+					long e1 = new Date().getTime();
+					System.out.println("{deserialize} " +(e1-s1));
 					// remotingMessage.setBody(body);
 				} catch (Exception ex)
 				{
@@ -172,13 +176,19 @@ public class HibernateAdapter extends JavaAdapter
 				}
 			}
 
-			// invoke the user class.method()
-			results = super.invoke(remotingMessage);
+			long s2 = new Date().getTime();
+				// invoke the user class.method()
+				results = super.invoke(remotingMessage);
+			long e2 = new Date().getTime();
+			System.out.println("{invoke} " +(e2-s2));
 
 			// serialize the result out
 			try
 			{
-				results = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER).translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
+				long s3 = new Date().getTime();
+					results = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER).translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
+				long e3 = new Date().getTime();
+				System.out.println("{serialize} " +(e3-s3));
 			} catch (Exception ex)
 			{
 				ex.printStackTrace();
