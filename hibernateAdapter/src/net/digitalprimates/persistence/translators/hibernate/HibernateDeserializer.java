@@ -21,13 +21,17 @@ package net.digitalprimates.persistence.translators.hibernate;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+
 import org.hibernate.collection.PersistentCollection;
 import org.w3c.dom.Document;
 
@@ -188,7 +192,24 @@ public class HibernateDeserializer implements IDeserializer
 					if (val != null)
 					{
 						Object newVal = translate(val, pd.getPropertyType());
-						pd.getWriteMethod().invoke(obj, newVal);
+						try
+						{
+							Method writeMethod = pd.getWriteMethod();
+							if ( writeMethod != null )
+							{
+								writeMethod.invoke(obj, newVal);	
+							}
+						}
+						catch (IllegalArgumentException e)
+						{
+							e.printStackTrace();
+							throw new RuntimeException(e);
+						}
+						catch (NullPointerException npe)
+						{
+							throw npe;
+						}
+						
 					}
 				}
 			}
@@ -204,7 +225,15 @@ public class HibernateDeserializer implements IDeserializer
 
 	private Object readCollection(Object obj, Class type)
 	{
-		List items = new ArrayList();
+		Collection items;
+		if (obj instanceof Set)
+		{
+			items = new HashSet();
+		}
+		else
+		{
+			items = new ArrayList();
+		}
 		Iterator itr = ((Collection) obj).iterator();
 		while (itr.hasNext())
 		{

@@ -19,11 +19,14 @@
 
 package net.digitalprimates.persistence.hibernate 
 {
-	import flash.events.EventDispatcher;
+	import mx.rpc.AsyncToken;
+	
+	import net.digitalprimates.persistence.state.HibernateUpdater;
+	import net.digitalprimates.persistence.state.StateRepository;
 	
 	public class HibernateBean implements IHibernateProxy 
 	{
-		private var __proxyKey:Object;
+		private var __proxyKey:Object = StateRepository.getKeyForNewObject();
 		private var __proxyInitialized:Boolean = true;
 
 		public function get proxyKey():Object {
@@ -31,6 +34,7 @@ package net.digitalprimates.persistence.hibernate
 		}
 		
 		public function set proxyKey( value:Object ):void {
+			StateRepository.removeFromNewEntityList( __proxyKey.toString() );
 			__proxyKey = value;
 		}
 
@@ -41,6 +45,10 @@ package net.digitalprimates.persistence.hibernate
 		
 		public function set proxyInitialized( value:Boolean ):void {
 			__proxyInitialized = value;
+		}
+		public function save() : AsyncToken
+		{
+			return HibernateUpdater.save( this );
 		}
 	}
 }

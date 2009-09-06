@@ -24,5 +24,6 @@ package net.digitalprimates.persistence.hibernate
 	public interface IHibernateRPC
 	{
 		function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken;
+		function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken;
 	}
 }

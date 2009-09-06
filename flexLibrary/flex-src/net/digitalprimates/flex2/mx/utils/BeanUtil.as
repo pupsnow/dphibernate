@@ -41,10 +41,15 @@ package net.digitalprimates.flex2.mx.utils
 			}
 
 			dictionary[ genericObj ] = true;
-
+			
+			if ( CustomBeanPopulatorRegistry.containsPopulatorForClass( classDefinition ) )
+			{
+				var populator : IBeanPopulator = CustomBeanPopulatorRegistry.getPopulator( classDefinition );
+				return populator.populateBean( genericObj , classDefinition , existingBean , dictionary , parent , parentProperty , ro );
+			}
 			if ( accesssorTypeMap[ classDefinition ] == null ) {
 				classInfo = DescribeTypeCache.describeType( classDefinition ).typeDescription;
-				accesssorTypeMap[ classDefinition ] = classInfo.accessor;
+				accesssorTypeMap[ classDefinition ] = classInfo..accessor;
 			}
 
 			accessors = accesssorTypeMap[ classDefinition ] as XMLList;
@@ -83,8 +88,9 @@ package net.digitalprimates.flex2.mx.utils
 					return bean;
 				}
 			} 
-
-			for ( var i:int=0; i<accessors.length(); i++ ) {					
+			
+			for ( var i:int=0; i<accessors.length(); i++ ) {			
+						
 				property = accessors[i].@name;
 				type = accessors[i].@type;
 				access = accessors[i].@access;

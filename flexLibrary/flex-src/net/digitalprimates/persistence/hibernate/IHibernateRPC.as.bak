@@ -20,15 +20,9 @@
 package net.digitalprimates.persistence.hibernate
 {
 	import mx.rpc.AsyncToken;
-
-	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy")]
-	public interface IHibernateProxy
+	
+	public interface IHibernateRPC
 	{
-		function get proxyKey():Object;
-		function set proxyKey( value:Object ):void;
-
-		function get proxyInitialized():Boolean;
-		function set proxyInitialized( value:Boolean ):void;
-		function save() : AsyncToken;
+		function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken;
 	}
 }

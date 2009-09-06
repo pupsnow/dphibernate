@@ -47,6 +47,8 @@ public class HibernateAdapter extends JavaAdapter
 	private String property_hibernateSessionFactoryClass = "";// "net.digitalprimates.persistence.hibernate.tools.HibernateFactory";
 	private String property_getCurrentSessionMethod = "";// "getCurrentSession";
 	private String property_loadMethod = "";// "load";
+	private String property_saveMethod = "";
+	private ArrayList<DPHibernateOperation> operations;
 
 
 	/**
@@ -66,6 +68,15 @@ public class HibernateAdapter extends JavaAdapter
 
 		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
 		property_loadMethod = destProps.getPropertyAsString("loadMethod", property_loadMethod);
+		property_saveMethod = destProps.getPropertyAsString("saveMethod", property_saveMethod);
+		operations = new ArrayList<DPHibernateOperation>();
+		operations.add(new LoadDPProxyOperation(getLoadMethodName()));
+		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
+	}
+
+
+	private String getSaveMethodName() {
+		return property_saveMethod;
 	}
 
 
@@ -115,26 +126,11 @@ public class HibernateAdapter extends JavaAdapter
 			// (RemotingDestinationControl)this.getControl().getParentControl();//destination;
 			RemotingMessage remotingMessage = (RemotingMessage) message;
 
-			// re-map our special "loadDpProxy" to the user defined hibernate
-			// load method.
-			if ("loadDPProxy".equals(remotingMessage.getOperation()))
+			for (DPHibernateOperation operation : operations )
 			{
-				try
+				if (operation.appliesForMessage(remotingMessage))
 				{
-					remotingMessage.setOperation(getLoadMethodName());
-					List paramArray = remotingMessage.getParameters();
-					List args = new ArrayList();
-
-					args.add(Class.forName(paramArray.get(1).getClass().getName()));
-					args.add(paramArray.get(0));
-
-					remotingMessage.setParameters(args);
-				} catch (ClassNotFoundException ex)
-				{
-					ex.printStackTrace();
-				} catch (Exception ex)
-				{
-					ex.printStackTrace();
+					operation.execute(remotingMessage);
 				}
 			}
 

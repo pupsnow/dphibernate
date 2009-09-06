@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/hibernate-3.2.5ga/hibernate3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/hibernate-3.2.5ga/hibernate3.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate-3.2.5ga/lib/ant-1.6.5.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate-3.2.5ga/lib/ant-antlr-1.6.5.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate-3.2.5ga/lib/ant-junit-1.6.5.jar"/>
@@ -45,10 +45,10 @@
 	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/spring.jar"/>
-	<classpathentry kind="lib" path="lib/flex-messaging-common.jar"/>
-	<classpathentry kind="lib" path="lib/flex-messaging-core.jar"/>
-	<classpathentry kind="lib" path="lib/flex-messaging-opt.jar"/>
-	<classpathentry kind="lib" path="lib/flex-messaging-proxy.jar"/>
-	<classpathentry kind="lib" path="lib/flex-messaging-remoting.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/flex-messaging-common.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/flex-messaging-core.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/flex-messaging-opt.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/flex-messaging-proxy.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/flex-messaging-remoting.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

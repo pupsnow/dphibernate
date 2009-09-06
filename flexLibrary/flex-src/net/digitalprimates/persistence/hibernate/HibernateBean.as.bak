@@ -17,18 +17,30 @@
 **/
 
 
-package net.digitalprimates.persistence.hibernate
+package net.digitalprimates.persistence.hibernate 
 {
-	import mx.rpc.AsyncToken;
-
-	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy")]
-	public interface IHibernateProxy
+	import flash.events.EventDispatcher;
+	
+	public class HibernateBean implements IHibernateProxy 
 	{
-		function get proxyKey():Object;
-		function set proxyKey( value:Object ):void;
+		private var __proxyKey:Object;
+		private var __proxyInitialized:Boolean = true;
 
-		function get proxyInitialized():Boolean;
-		function set proxyInitialized( value:Boolean ):void;
-		function save() : AsyncToken;
+		public function get proxyKey():Object {
+			return __proxyKey;
+		}
+		
+		public function set proxyKey( value:Object ):void {
+			__proxyKey = value;
+		}
+
+	    [Bindable(event="propertyChange")]
+		public function get proxyInitialized():Boolean {
+			return __proxyInitialized;
+		}
+		
+		public function set proxyInitialized( value:Boolean ):void {
+			__proxyInitialized = value;
+		}
 	}
 }

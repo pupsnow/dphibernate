@@ -1,61 +1,74 @@
 /**
-	Copyright (c) 2008. Digital Primates IT Consulting Group
-	http://www.digitalprimates.net
-	All rights reserved.
-	
-	This library is free software; you can redistribute it and/or modify it under the 
-	terms of the GNU Lesser General Public License as published by the Free Software 
-	Foundation; either version 2.1 of the License.
+   Copyright (c) 2008. Digital Primates IT Consulting Group
+   http://www.digitalprimates.net
+   All rights reserved.
 
-	This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-	without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-	See the GNU Lesser General Public License for more details.
+   This library is free software; you can redistribute it and/or modify it under the
+   terms of the GNU Lesser General Public License as published by the Free Software
+   Foundation; either version 2.1 of the License.
 
-	
-	@author: malabriola
-	@ignore
-**/
+   This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+   without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the GNU Lesser General Public License for more details.
 
-package net.digitalprimates.persistence.hibernate.rpc 
+
+   @author: malabriola
+   @ignore
+ **/
+
+package net.digitalprimates.persistence.hibernate.rpc
 {
-	import flash.utils.*;
-	
-	import mx.core.mx_internal;
-	import mx.rpc.AsyncToken;
-	import mx.rpc.remoting.mxml.RemoteObject;
-	
-	import net.digitalprimates.persistence.hibernate.HibernateManaged;
-	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
-	import net.digitalprimates.persistence.hibernate.IHibernateRPC;
+    import flash.utils.*;
+    
+    import mx.core.mx_internal;
+    import mx.logging.ILogger;
+    import mx.rpc.AsyncToken;
+    import mx.rpc.remoting.mxml.RemoteObject;
+    
+    import net.digitalprimates.persistence.hibernate.ClassUtils;
+    import net.digitalprimates.persistence.hibernate.HibernateManaged;
+    import net.digitalprimates.persistence.hibernate.IHibernateProxy;
+    import net.digitalprimates.persistence.hibernate.IHibernateRPC;
+    import net.digitalprimates.persistence.state.ObjectChangeMessage;
+    import net.digitalprimates.util.LogUtil;
 
-use namespace flash_proxy;
-use namespace mx_internal;
+    use namespace flash_proxy;
+    use namespace mx_internal;
 
-	use namespace flash_proxy;
+    use namespace flash_proxy;
 
-	dynamic public class HibernateRemoteObject extends RemoteObject implements IHibernateRPC
-	{
-		
-		public function HibernateRemoteObject(destination:String = null)
+    dynamic public class HibernateRemoteObject extends RemoteObject implements IHibernateRPC
+    {
+		private var log : ILogger = LogUtil.getLogger( this );
+        public function HibernateRemoteObject(destination:String = null)
+        {
+            super(destination);
+        }
+
+        public function loadProxy(proxyKey:Object, hibernateProxy:IHibernateProxy):AsyncToken
+        {
+        	var className : String =  getQualifiedClassName( hibernateProxy ) 
+        	log.info( "Reuqesting proxy for {0} id: {1}" , className , proxyKey );
+        	var remoteClassName : String = ClassUtils.getRemoteClassName( hibernateProxy );
+            return this.loadDPProxy(proxyKey, remoteClassName);
+        }
+		public function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken
 		{
-	        super(destination);
-	    }
-		
-		public function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken {
-	    	return this.loadDPProxy( proxyKey, hibernateProxy );
+			var className : String = getQualifiedClassName( hibernateProxy );
+			log.info( "Saving {0} {1}" , className , hibernateProxy.proxyKey );
+			return this.saveDPProxy( objectChangeMessages );
 		}
+        override flash_proxy function callProperty(name:*, ... args:Array):*
+        {
+            var token:AsyncToken;
 
-	    override flash_proxy function callProperty(name:*, ... args:Array):*
-	    {
-	    	var token:AsyncToken;
+            HibernateManaged.disableServerCalls(this);
+            token = getOperation(getLocalName(name)).send.apply(null, args);
 
-			HibernateManaged.disableServerCalls( this );
-			token = getOperation(getLocalName(name)).send.apply(null, args);
+            HibernateManaged.addHibernateResponder(this, token);
+            HibernateManaged.enableServerCalls(this);
 
-	    	HibernateManaged.addHibernateResponder( this, token );
-			HibernateManaged.enableServerCalls( this );
-
-	        return token;
-	    }
-	}
+            return token;
+        }
+    }
 }
