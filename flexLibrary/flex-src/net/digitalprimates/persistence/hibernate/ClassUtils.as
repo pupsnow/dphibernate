@@ -1,10 +1,10 @@
 package net.digitalprimates.persistence.hibernate
 {
-	import flash.debugger.enterDebugger;
 	import flash.utils.describeType;
 	
 	import mx.utils.DescribeTypeCache;
 	import mx.utils.DescribeTypeCacheRecord;
+	import mx.utils.ObjectUtil;
 
 	public class ClassUtils
 	{
@@ -36,6 +36,16 @@ package net.digitalprimates.persistence.hibernate
 			entry=cacheRecord.typeDescription;
 			accessors=entry.accessor.(@name==propertyName).metadata.(@name=='Transient');
 			if ( accessors.length() == 0 ) return false;
+			return true;
+		}
+		public static function isImmutable( object : Object ) : Boolean
+		{
+			 var entry:XML; 
+			var immutableTag:XMLList
+			var cacheRecord:DescribeTypeCacheRecord=DescribeTypeCache.describeType(object);
+			entry=cacheRecord.typeDescription;
+			immutableTag=entry.metadata.(@name=='Immutable');
+			if ( immutableTag.length() == 0 ) return false;
 			return true;
 		}
 	}

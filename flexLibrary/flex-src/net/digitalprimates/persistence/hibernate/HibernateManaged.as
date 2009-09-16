@@ -56,7 +56,17 @@ package net.digitalprimates.persistence.hibernate
         protected static var serverCallsEnanabled:Dictionary = new Dictionary(true);
 
         private static var log:ILogger = LogUtil.getLogger(HibernateManaged);
-
+		
+		private static var _defaultHibernateService : IHibernateRPC;
+		
+		public static function set defaultHibernateService( value : IHibernateRPC ) : void
+		{
+			_defaultHibernateService = value;
+		}
+		public static function get defaultHibernateService() : IHibernateRPC
+		{
+			return _defaultHibernateService;
+		}
         public static function areServerCallsEnabled(ro:IHibernateRPC):Boolean
         {
             return (serverCallsEnanabled[ro] != false);
@@ -164,11 +174,6 @@ package net.digitalprimates.persistence.hibernate
 
             if ((obj is IPropertyChangeNotifier) && parent)
             {
-                /*
-                   ( obj as IPropertyChangeNotifier).addEventListener(
-                   PropertyChangeEvent.PROPERTY_CHANGE, rebroadcastEvent);
-                 */
-
                 (obj as IPropertyChangeNotifier).addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
             }
         }

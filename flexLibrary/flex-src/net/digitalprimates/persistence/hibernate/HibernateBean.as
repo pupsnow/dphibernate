@@ -50,5 +50,9 @@ package net.digitalprimates.persistence.hibernate
 		{
 			return HibernateUpdater.save( this );
 		}
+		public function deleteRecord() : AsyncToken
+		{
+			return HibernateUpdater.deleteRecord( this );
+		}
 	}
 }
