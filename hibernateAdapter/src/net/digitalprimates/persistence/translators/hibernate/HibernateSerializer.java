@@ -99,11 +99,12 @@ public class HibernateSerializer implements ISerializer
 		// getSessionMethod);
 		Session session = getSessionFactory().getCurrentSession();
 		boolean objectInSession = session.contains(obj);
+		/*
 		if (!objectInSession)
 		{
 			throw new RuntimeException("Object for translation not in session.  Ensure either OpenSessionInViewFilter or OpenSessionInViewInterceptor is configured");
 		}
-		
+		*/
 		return translate(obj);
 	}
 
