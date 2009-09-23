@@ -23,6 +23,7 @@ package net.digitalprimates.persistence.hibernate
     import flash.utils.*;
     
     import mx.collections.ArrayCollection;
+    import mx.collections.IList;
     import mx.core.IPropertyChangeNotifier;
     import mx.events.PropertyChangeEvent;
     import mx.logging.ILogger;
@@ -143,7 +144,7 @@ package net.digitalprimates.persistence.hibernate
                         if (accessor.metadata.(@name == "Transient").length() > 0 || accessor.@access == "readonly")
                         {
                             // Skip, because it's transient
-                            log.info("Not managing {0}.{1} because transient or readonly", accessor.@declaredBy, accessor.@name);
+//                            log.info("Not managing {0}.{1} because transient or readonly", accessor.@declaredBy, accessor.@name);
                         }
                         else
                         {
@@ -340,7 +341,13 @@ package net.digitalprimates.persistence.hibernate
             disableServerCalls(event.token.ro);
 
             manageChildTree(event.result, null, null, event.token.ro);
+            if ( event.result is IHibernateProxy )
+            {
 			StateRepository.store( event.result as IHibernateProxy );
+            } else if ( event.result is IList )
+            {
+            	StateRepository.storeList( event.result as IList ); 
+            }
             enableServerCalls(event.token.ro);
         }
 

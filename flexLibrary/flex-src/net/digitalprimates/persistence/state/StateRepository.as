@@ -34,11 +34,14 @@ package net.digitalprimates.persistence.state
 		{
 		}
 
-		public static function storeList(list:IList,owner:IHibernateProxy,propertyName : String):void
+		public static function storeList(list:IList,owner:IHibernateProxy=null,propertyName : String=null):void
 		{
-			log.debug("Store list {0}::{1} {2}" , getQualifiedClassName(owner),owner.proxyKey,propertyName);
-			list.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
-			listTable[ list ] = new PropertyReference( propertyName , owner );
+			if ( owner != null )
+			{
+				log.debug("Store list {0}::{1} {2}" , getQualifiedClassName(owner),owner.proxyKey,propertyName);
+				list.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
+				listTable[ list ] = new PropertyReference( propertyName , owner );
+			}
 			for (var i:int=0; i < list.length; i++)
 			{
 				if (list.getItemAt(i) is IHibernateProxy)
