@@ -38,6 +38,8 @@ package net.digitalprimates.persistence.state
 		{
 			if ( owner != null )
 			{
+				if ( ClassUtils.isPropertyImmutable( owner , propertyName ) )
+					return;
 				log.debug("Store list {0}::{1} {2}" , getQualifiedClassName(owner),owner.proxyKey,propertyName);
 				list.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
 				listTable[ list ] = new PropertyReference( propertyName , owner );
@@ -114,12 +116,13 @@ package net.digitalprimates.persistence.state
 			{
 				HibernateManaged.disableServerCalls( ro );
 				reEnableServerCalls = true;
-				
 			} 
 			for each (var accessor:XML in ClassUtils.getAccessors(object))
 			{
 				var propertyName : String = accessor.@name;
 				if ( ClassUtils.isTransient( object , propertyName ) ) 
+					continue;
+				if ( ClassUtils.isPropertyImmutable( object , propertyName ) )
 					continue;
 				if ( ignoreProperty( propertyName ) ) 
 					continue;
@@ -374,6 +377,8 @@ package net.digitalprimates.persistence.state
 			{
 				var propertyName : String = accessor.@name; 
 				if ( ClassUtils.isTransient( object , propertyName ) ) 
+					continue;
+				if ( ClassUtils.isPropertyImmutable( object , propertyName ) )
 					continue;
 				if ( ignoreProperty( propertyName ) ) 
 					continue;

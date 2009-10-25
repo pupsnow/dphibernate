@@ -21,7 +21,6 @@ package net.digitalprimates.persistence.translators.hibernate;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,7 +39,6 @@ import net.digitalprimates.persistence.annotations.EagerlySerialize;
 import net.digitalprimates.persistence.annotations.NoLazyLoadOnSerialize;
 import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
-import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
 import net.digitalprimates.persistence.translators.ISerializer;
 
 import org.hibernate.Query;
@@ -98,6 +96,7 @@ public class HibernateSerializer implements ISerializer
 		// this.sessionManager = new SessionManager(sessionFactoryClazz,
 		// getSessionMethod);
 		Session session = getSessionFactory().getCurrentSession();
+		/*
 		boolean objectInSession = session.contains(obj);
 		/*
 		if (!objectInSession)

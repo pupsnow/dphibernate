@@ -46,7 +46,7 @@ public class PropertyChangeUpdater implements IChangeUpdater {
 		}
 		Object currentValue = getCurrentValue();
 		Object oldValue = getOldValue();
-		checkConcurrency(currentValue, oldValue);
+		//checkConcurrency(currentValue, oldValue);
 		updateNewValue();
 		return result;
 	}
