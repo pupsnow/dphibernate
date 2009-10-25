@@ -40,6 +40,8 @@
 	<target name="clean">
         <!--delete dir="${generateddir}"/-->
         <mkdir dir="${generateddir}"/>
+		<delete dir="${bindir}" failonerror="false" />
+		<mkdir dir="${bindir}" />
     </target>
 	
 	<target name="install" depends="jar">
