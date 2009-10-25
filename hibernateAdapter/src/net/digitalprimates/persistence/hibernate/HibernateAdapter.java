@@ -36,18 +36,12 @@ public class HibernateAdapter extends JavaAdapter
 	// private String scope = "request";
 	protected Destination destination;
 
-	/*
-	 * static {
-	 * PropertyProxyRegistry.getRegistry().register(HibernateProxy.class, new
-	 * HibernateLazyPropertyProxy());
-	 * PropertyProxyRegistry.getRegistry().register(AbstractPersistentCollection.class,
-	 * new HibernateLazyCollectionProxy()); }
-	 */
-
 	private String property_hibernateSessionFactoryClass = "";// "net.digitalprimates.persistence.hibernate.tools.HibernateFactory";
 	private String property_getCurrentSessionMethod = "";// "getCurrentSession";
-	private String property_loadMethod = "";// "load";
-	private String property_saveMethod = "";
+	private String default_loadMethod = "loadBean";
+	private String default_saveMethod = "saveBean";
+	private String loadMethodName;
+	private String saveMethodName;
 	private ArrayList<DPHibernateOperation> operations;
 
 
@@ -67,43 +61,32 @@ public class HibernateAdapter extends JavaAdapter
 		property_getCurrentSessionMethod = adapterHibernateProps.getPropertyAsString("getCurrentSessionMethod", property_getCurrentSessionMethod);
 
 		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-		property_loadMethod = destProps.getPropertyAsString("loadMethod", property_loadMethod);
-		property_saveMethod = destProps.getPropertyAsString("saveMethod", property_saveMethod);
+		
 		operations = new ArrayList<DPHibernateOperation>();
-		operations.add(new LoadDPProxyOperation(getLoadMethodName()));
-		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
+		loadMethodName = getLoadMethodName(destProps, adapterHibernateProps);
+		saveMethodName = getSaveMethodName(destProps, adapterHibernateProps);
+		operations.add(new LoadDPProxyOperation(loadMethodName));
+		operations.add(new SaveDPProxyOperation(saveMethodName));
 	}
 
 
-	private String getSaveMethodName() {
-		return property_saveMethod;
+	private String getSaveMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps) {
+		return getConfigProperty(destProps, adapterHibernateProps, "saveMethod", default_saveMethod);
 	}
 
 
-	/**
-	 * Store the adapter properties in the local properties object
-	 * 
-	 * @param destination
-	 * @param adapterSettings
-	 * @param destinationSettings
-	 * 
-	 * public void setSettings(Destination destination, AdapterSettings
-	 * adapterSettings, DestinationSettings destinationSettings) {
-	 * //super.setSettings(destination, adapterSettings, destinationSettings);
-	 *  // Second, initialize adapter level properties PropertiesSettings
-	 * properties = adapterSettings; properties(properties);
-	 *  // Third, initialize destination level properties properties =
-	 * destinationSettings; properties(properties); }
-	 * 
-	 * 
-	 * 
-	 * protected void properties(PropertiesSettings propertiesSettings) {
-	 * super.properties(propertiesSettings); }
-	 */
-
-	private String getLoadMethodName()
+	private String getLoadMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps)
 	{
-		return property_loadMethod;
+		return getConfigProperty(destProps, adapterHibernateProps, "loadMethod", default_loadMethod);
+	}
+	private String getConfigProperty(ConfigMap destProps, ConfigMap adapterHibernateProps, String propertyName, String defaultValue)
+	{
+		String result;
+		result = destProps.getPropertyAsString(propertyName, null);
+		if (result != null) return result;
+		
+		result = adapterHibernateProps.getPropertyAsString(propertyName, null);
+		return (result != null) ? result : defaultValue;
 	}
 
 
@@ -156,7 +139,7 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-						Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), getLoadMethodName(), property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
+						Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
 						remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " +(e1-s1));

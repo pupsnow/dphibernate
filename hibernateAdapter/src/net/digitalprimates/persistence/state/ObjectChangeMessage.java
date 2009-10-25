@@ -102,4 +102,15 @@ public class ObjectChangeMessage {
 	public boolean getIsDeleted() {
 		return isDeleted;
 	}
+	public boolean containsChangeToProperty(String propertyName)
+	{
+		for (PropertyChangeMessage pcm : changedProperties)
+		{
+			if (pcm.getPropertyName().equals(propertyName))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }

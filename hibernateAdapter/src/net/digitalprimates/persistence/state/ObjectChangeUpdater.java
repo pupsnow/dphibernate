@@ -6,6 +6,7 @@ import static ch.lambdaj.function.matcher.HasArgumentWithValue.having;
 import static org.hamcrest.Matchers.is;
 
 import java.io.Serializable;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,8 @@ import net.digitalprimates.persistence.translators.hibernate.DPHibernateCache;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.TypeMismatchException;
+import org.springframework.security.Authentication;
+import org.springframework.security.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -47,10 +50,63 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 	private Map<IHibernateProxy, ObjectChangeMessage> entitiesAwaitingCommit = new HashMap<IHibernateProxy, ObjectChangeMessage>();
 
+	private List<IChangeMessageInterceptor> postProcessors;
+
+	private List<IChangeMessageInterceptor> preProcessors;
+
 
 	@SuppressWarnings("unchecked")
 	@Transactional(readOnly = false)
 	public List<ObjectChangeResult> update(ObjectChangeMessage changeMessage)
+	{
+		try
+		{
+			applyPreProcessors(changeMessage);
+		} catch (ObjectChangeAbortedException e)
+		{
+			// TODO : Handle this - the change was not permitted
+			throw new RuntimeException(e);
+		}
+		List<ObjectChangeResult> result = processUpdate(changeMessage);
+		applyPostProcessors(changeMessage);
+		return result;
+	}
+
+
+	private void applyPostProcessors(ObjectChangeMessage changeMessage)
+	{
+		applyInterceptors(changeMessage, getPostProcessors());
+	}
+
+
+	private void applyInterceptors(ObjectChangeMessage changeMessage, List<IChangeMessageInterceptor> interceptors)
+	{
+		if (interceptors == null)
+			return;
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		for (IChangeMessageInterceptor interceptor : interceptors)
+		{
+			if (interceptor.appliesToMessage(changeMessage))
+			{
+				if (authentication != null)
+				{
+					interceptor.processMessage(changeMessage, (Principal) authentication.getPrincipal());
+				} else
+				{
+					interceptor.processMessage(changeMessage);
+				}
+			}
+		}
+	}
+
+
+	private void applyPreProcessors(ObjectChangeMessage changeMessage) throws ObjectChangeAbortedException
+	{
+		applyInterceptors(changeMessage, getPreProcessors());
+	}
+
+
+	private List<ObjectChangeResult> processUpdate(ObjectChangeMessage changeMessage)
 	{
 		List<ObjectChangeResult> result = new ArrayList<ObjectChangeResult>();
 		if (changeMessage.getResult() != null)
@@ -118,6 +174,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		}
 		invalidateCacheForObject(changeMessage, entity);
 		return result;
+
 	}
 
 
@@ -172,32 +229,42 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 
 	@SuppressWarnings("unchecked")
-	private IHibernateProxy getEntity(ObjectChangeMessage changeMessage) {
+	private IHibernateProxy getEntity(ObjectChangeMessage changeMessage)
+	{
 		String className = changeMessage.getOwner().getRemoteClassName();
 		Class<? extends IHibernateProxy> entityClass;
-		try {
-			 entityClass = (Class<? extends IHibernateProxy>) Class.forName(className);
-		} catch (Exception e) {
+		try
+		{
+			entityClass = (Class<? extends IHibernateProxy>) Class.forName(className);
+		} catch (Exception e)
+		{
 			throw new RuntimeException(e);
-		}	
-		
-		if (changeMessage.getIsNew()) {
-			try {
+		}
+
+		if (changeMessage.getIsNew())
+		{
+			try
+			{
 				IHibernateProxy instance = entityClass.newInstance();
 				changeMessage.setCreatedEntity(instance);
 				return instance;
-			} catch (Exception e) {
+			} catch (Exception e)
+			{
 				throw new RuntimeException(e);
 			}
-		} else {
-			try {
+		} else
+		{
+			try
+			{
 				Serializable primaryKey = (Serializable) changeMessage.getOwner().getProxyId();
-				if (primaryKey instanceof String) {
+				if (primaryKey instanceof String)
+				{
 					primaryKey = Integer.parseInt((String) primaryKey);
 				}
 				Object entity = sessionFactory.getCurrentSession().get(entityClass, primaryKey);
 				return (IHibernateProxy) entity;
-			} catch (TypeMismatchException e) {
+			} catch (TypeMismatchException e)
+			{
 				e.printStackTrace();
 				throw e;
 			}
@@ -233,6 +300,30 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	public SessionFactory getSessionFactory()
 	{
 		return sessionFactory;
+	}
+
+
+	public void setPreProcessors(List<IChangeMessageInterceptor> preProcessors)
+	{
+		this.preProcessors = preProcessors;
+	}
+
+
+	public List<IChangeMessageInterceptor> getPreProcessors()
+	{
+		return preProcessors;
+	}
+
+
+	public void setPostProcessors(List<IChangeMessageInterceptor> postProcessors)
+	{
+		this.postProcessors = postProcessors;
+	}
+
+
+	public List<IChangeMessageInterceptor> getPostProcessors()
+	{
+		return postProcessors;
 	}
 
 }
