@@ -35,13 +35,13 @@ import org.hibernate.cfg.Configuration;
 public class HibernateUtil
 {
 
-    private static final SessionFactory sessionFactory;
+    private static SessionFactory sessionFactory;
 
     public static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 
     public static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
 
-    static
+    private static void initalizeSessionFactory()
     {
         try
         {
@@ -59,6 +59,10 @@ public class HibernateUtil
 
     public static SessionFactory getSessionFactory() throws HibernateException
     {
+    	if (sessionFactory == null)
+    	{
+    		initalizeSessionFactory();
+    	}
     	return sessionFactory;
     }
     
@@ -80,7 +84,7 @@ public class HibernateUtil
         // Open a new Session, if this Thread has none yet
         if (s == null)
         {
-            s = sessionFactory.openSession();
+            s = getSessionFactory().openSession();
             threadSession.set(s);
         }
         return s;
@@ -111,6 +115,15 @@ public class HibernateUtil
         if (tx == null)
         {
             tx = getCurrentSession().beginTransaction();
+            threadTransaction.set(tx);
+        }
+    }
+    public static void beginTransaction(Session session)
+    {
+    	Transaction tx = threadTransaction.get();
+        if (tx == null)
+        {
+            tx = session.beginTransaction();
             threadTransaction.set(tx);
         }
     }
