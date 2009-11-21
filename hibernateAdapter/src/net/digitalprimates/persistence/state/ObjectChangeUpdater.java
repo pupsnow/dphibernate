@@ -2,15 +2,18 @@ package net.digitalprimates.persistence.state;
 
 import static ch.lambdaj.Lambda.filter;
 import static ch.lambdaj.Lambda.on;
-import static ch.lambdaj.function.matcher.HasArgumentWithValue.having;
+import static ch.lambdaj.function.matcher.HasArgumentWithValue.havingValue;
 import static org.hamcrest.Matchers.is;
 
 import java.io.Serializable;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.annotation.Resource;
 
@@ -18,6 +21,7 @@ import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 import net.digitalprimates.persistence.translators.hibernate.DPHibernateCache;
 
 import org.hibernate.SessionFactory;
+import org.hibernate.TransactionException;
 import org.hibernate.TypeMismatchException;
 import org.springframework.security.Authentication;
 import org.springframework.security.context.SecurityContextHolder;
@@ -42,13 +46,13 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	@Resource
 	private DPHibernateCache cache;
 
-	private List<String> processedKeys = new ArrayList<String>();
+	private Map<String,Set<ObjectChangeResult>> processedKeys = new HashMap<String,Set<ObjectChangeResult>>();
 
 	// When creating a chain of entities, we only commit the very top level
 	// and let hibernate do the rest
 	private IHibernateProxy topLevelEntity;
 
-	private Map<IHibernateProxy, ObjectChangeMessage> entitiesAwaitingCommit = new HashMap<IHibernateProxy, ObjectChangeMessage>();
+	private HashMap<IHibernateProxy, ObjectChangeMessage> entitiesAwaitingCommit = new HashMap<IHibernateProxy, ObjectChangeMessage>();
 
 	private List<IChangeMessageInterceptor> postProcessors;
 
@@ -57,7 +61,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 	@SuppressWarnings("unchecked")
 	@Transactional(readOnly = false)
-	public List<ObjectChangeResult> update(ObjectChangeMessage changeMessage)
+	public Set<ObjectChangeResult> update(ObjectChangeMessage changeMessage)
 	{
 		try
 		{
@@ -67,7 +71,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 			// TODO : Handle this - the change was not permitted
 			throw new RuntimeException(e);
 		}
-		List<ObjectChangeResult> result = processUpdate(changeMessage);
+		Set<ObjectChangeResult> result = processUpdate(changeMessage);
 		applyPostProcessors(changeMessage);
 		return result;
 	}
@@ -88,12 +92,12 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		{
 			if (interceptor.appliesToMessage(changeMessage))
 			{
-				if (authentication != null)
+				if (authentication != null && !authentication.getPrincipal().equals("roleAnonymous"))
 				{
-					interceptor.processMessage(changeMessage, (Principal) authentication.getPrincipal());
+					interceptor.processMessage(changeMessage, proxyResolver, (Principal) authentication.getPrincipal());
 				} else
 				{
-					interceptor.processMessage(changeMessage);
+					interceptor.processMessage(changeMessage, proxyResolver);
 				}
 			}
 		}
@@ -106,16 +110,32 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 
 
-	private List<ObjectChangeResult> processUpdate(ObjectChangeMessage changeMessage)
+	private Set<ObjectChangeResult> processUpdate(ObjectChangeMessage changeMessage)
 	{
-		List<ObjectChangeResult> result = new ArrayList<ObjectChangeResult>();
+		Set<ObjectChangeResult> result = new HashSet<ObjectChangeResult>();
 		if (changeMessage.getResult() != null)
-			return result; // We've already processed this message.
-		if (processedKeys.contains(changeMessage.getOwner().getKey()))
 		{
+			// We've already processed this message.
+			result.add(changeMessage.getResult());
 			return result;
 		}
-		processedKeys.add(changeMessage.getOwner().getKey());
+		String changeMessageKey = changeMessage.getOwner().getKey();
+		if (processedKeys.containsKey(changeMessageKey))
+		{
+			// WORKAROUND:
+			// Sometimes we can get multiple instances of change messages
+			// for new objects when adding to a collection.
+			// The "CREATE" has already been processed, and the result is stored,
+			// but needs to be set on other collection member messages
+			result = processedKeys.get(changeMessageKey);
+			if (result.size() == 1 && changeMessage.getResult() == null)
+			{
+				changeMessage.setResult(result.iterator().next());
+				changeMessage.setCreatedEntity(proxyResolver.resolve(changeMessage.getOwner()));
+			}
+			return result;
+		}
+		processedKeys.put(changeMessageKey,result);
 		if (!changeMessage.hasChanges() && !changeMessage.getIsDeleted())
 			return result;
 		IHibernateProxy entity = getEntity(changeMessage);
@@ -151,12 +171,13 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 				 * proxyResolver.removeInProcessProxy(changeMessage.getOwner()
 				 * .getKey(), entity);
 				 */
-				for (IHibernateProxy entityAwaitingCommit : entitiesAwaitingCommit.keySet())
+				for (Entry<IHibernateProxy, ObjectChangeMessage> entityAwaitingCommit : entitiesAwaitingCommit.entrySet())
 				{
-					if (entityAwaitingCommit.getProxyKey() != null)
+					IHibernateProxy proxy = entityAwaitingCommit.getKey();
+					if (proxy.getProxyKey() != null)
 					{
-						ObjectChangeMessage dependantChangeMessage = entitiesAwaitingCommit.get(entityAwaitingCommit);
-						ObjectChangeResult dependentMessageResult = new ObjectChangeResult(dependantChangeMessage, entityAwaitingCommit.getProxyKey());
+						ObjectChangeMessage dependantChangeMessage = entityAwaitingCommit.getValue();
+						ObjectChangeResult dependentMessageResult = new ObjectChangeResult(dependantChangeMessage, proxy.getProxyKey());
 						dependantChangeMessage.setResult(dependentMessageResult);
 						result.add(dependentMessageResult);
 						entitiesAwaitingCommit.remove(entityAwaitingCommit);
@@ -186,28 +207,38 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 	@Transactional(readOnly = false)
 	@Override
-	public List<ObjectChangeResult> update(List<ObjectChangeMessage> changeMessages)
+	public Set<ObjectChangeResult> update(List<ObjectChangeMessage> changeMessages)
 	{
 		// For debugging:
 		// XStream xStream = new XStream();
 		// System.out.println(xStream.toXML(changeMessages));
 
 		// Update new items first
-		List<ObjectChangeMessage> newObjects = filter(having(on(ObjectChangeMessage.class).getIsNew(), is(true)), changeMessages);
+		List<ObjectChangeMessage> newObjects = filter(havingValue(on(ObjectChangeMessage.class).getIsNew(), is(true)), changeMessages);
 		UpdateDependencyResolver dependencyResolver = new UpdateDependencyResolver();
 		dependencyResolver.addMessages(newObjects);
 		List<ObjectChangeMessage> newMessagesOrderedByDependency = dependencyResolver.getOrderedList();
-		List<ObjectChangeResult> result = doUpdate(newMessagesOrderedByDependency);
+		Set<ObjectChangeResult> result = doUpdate(newMessagesOrderedByDependency);
 
 		changeMessages.removeAll(newObjects);
 		result.addAll(doUpdate(changeMessages));
+		/*
+		try
+		{
+			sessionFactory.getCurrentSession().getTransaction().commit();
+		} catch (TransactionException e)
+		{
+			// Perhaps it had already been committed..
+			System.out.print(e);
+		}
+		*/
 		return result;
 	}
 
 
-	private List<ObjectChangeResult> doUpdate(List<ObjectChangeMessage> changeMessages)
+	private Set<ObjectChangeResult> doUpdate(List<ObjectChangeMessage> changeMessages)
 	{
-		List<ObjectChangeResult> result = new ArrayList<ObjectChangeResult>();
+		Set<ObjectChangeResult> result = new HashSet<ObjectChangeResult>();
 		for (ObjectChangeMessage message : changeMessages)
 		{
 			result.addAll(update(message));
