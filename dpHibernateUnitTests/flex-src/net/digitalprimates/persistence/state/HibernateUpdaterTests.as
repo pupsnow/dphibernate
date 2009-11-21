@@ -15,12 +15,13 @@ package net.digitalprimates.persistence.state
 		{
 		}
 		private var mockService:MockHibernateRPC;
-
+		private var changeMessageGenerator:ChangeMessageGenerator;
 		[Before]
 		public function setUp():void
 		{
 			StateRepository.reset();
 			mockService=new MockHibernateRPC();
+			changeMessageGenerator = new ChangeMessageGenerator();
 		}
 
 		[Test]
@@ -32,11 +33,11 @@ package net.digitalprimates.persistence.state
 
 			StateRepository.store(author);
 			author.name="Sondehim";
-			Assert.assertTrue(StateRepository.hasChanges(author));
+			Assert.assertTrue(changeMessageGenerator.hasChanges(author));
 			var token:AsyncToken=author.save(); // Should be same as returnToken
 
 			HibernateUpdater.saveCompleted(ResultEvent.createEvent(null, token));
-			Assert.assertFalse(StateRepository.hasChanges(author));
+			Assert.assertFalse(changeMessageGenerator.hasChanges(author));
 		}
 
 		[Test]
@@ -47,7 +48,7 @@ package net.digitalprimates.persistence.state
 			var book:Book=StateRepositoryTests.getBook(4, "Getting Real", author);
 			author.books.addItem(book);
 			
-			var bookChanges : ObjectChangeMessage =  ChangeMessageFactory.getChangesForEntityOnly( book );
+			var bookChanges : ObjectChangeMessage =  changeMessageGenerator.getChangesForEntityOnly( book );
 			Assert.assertTrue( bookChanges.isNew );
 			Assert.assertTrue( bookChanges.hasChanges );
 			
@@ -61,7 +62,7 @@ package net.digitalprimates.persistence.state
 			
 			HibernateUpdater.saveCompleted( ResultEvent.createEvent( new ArrayCollection([ updateResult ]) , returnToken ) );
 			
-			bookChanges = ChangeMessageFactory.getChangesForEntityOnly( book );
+			bookChanges = changeMessageGenerator.getChangesForEntityOnly( book );
 			Assert.assertFalse( bookChanges.isNew );
 			Assert.assertFalse( bookChanges.hasChanges );
 			
@@ -89,7 +90,7 @@ package net.digitalprimates.persistence.state
 			
 			HibernateUpdater.saveCompleted(ResultEvent.createEvent(null, returnToken));
 			
-			var authorChanges : ObjectChangeMessage = ChangeMessageFactory.getChangesForEntityOnly( author );
+			var authorChanges : ObjectChangeMessage = changeMessageGenerator.getChangesForEntityOnly( author );
 			Assert.assertTrue( authorChanges.hasChanges );
 			Assert.assertTrue( authorChanges.hasChangedProperty( "age" ) );
 			Assert.assertTrue( authorChanges.hasChangedProperty( "name" ) );
@@ -117,7 +118,7 @@ package net.digitalprimates.persistence.state
 			
 			book.title = "Getting a little bit more real";
 			
-			var bookChanges : ObjectChangeMessage = ChangeMessageFactory.getChangesForEntityOnly( book );
+			var bookChanges : ObjectChangeMessage = changeMessageGenerator.getChangesForEntityOnly( book );
 			Assert.assertNotNull( bookChanges );
 			Assert.assertEquals( newId , bookChanges.owner.proxyId );
 		}

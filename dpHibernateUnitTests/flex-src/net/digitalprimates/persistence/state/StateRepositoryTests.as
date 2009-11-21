@@ -22,18 +22,20 @@ package net.digitalprimates.persistence.state
 		
 		
 		private static var mockService : MockHibernateRPC;
+		private var changeMessageGenerator : ChangeMessageGenerator;
 		[Before]
 		public function setUp():void
 		{
 			StateRepository.reset();
 			mockService = new MockHibernateRPC();
+			changeMessageGenerator = new ChangeMessageGenerator();
 		}
 		[Test]
 		public function testCreatingObject() : void
 		{
 			var author : Author = new Author();
 			author.name = "Sondheim";
-			var changes : Array = ChangeMessageFactory.getChanges( author );
+			var changes : Array = changeMessageGenerator.getChanges( author );
 			Assert.assertEquals( 1 , changes.length );
 			Assert.assertTrue( changes[0] is ObjectChangeMessage );
 			var changeMessage : ObjectChangeMessage = changes[0] as ObjectChangeMessage;
@@ -58,7 +60,7 @@ package net.digitalprimates.persistence.state
 			StateRepository.store( book );
 			
 			book.author = newAuthor;			
-			var changes : Array = ChangeMessageFactory.getChanges( book );
+			var changes : Array = changeMessageGenerator.getChanges( book );
 
 			Assert.assertEquals( 2 , changes.length );
 			assertContainsObjectChangeMessage( changes , book );
@@ -93,7 +95,7 @@ package net.digitalprimates.persistence.state
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
 			author.name="Sondheim";
-			var changes:Array = ChangeMessageFactory.getChanges(author);
+			var changes:Array = changeMessageGenerator.getChanges(author);
 			Assert.assertNotNull(changes);
 			Assert.assertEquals( 1 , changes.length );
 			var changeMessage : ObjectChangeMessage = changes[0] as ObjectChangeMessage;
@@ -121,7 +123,7 @@ package net.digitalprimates.persistence.state
 			StateRepository.store(author);
 			author.name="Sondhiem";
 			author.name="Schwartz";
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(author);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(author);
 			Assert.assertNotNull(changes);
 			Assert.assertEquals(1, changes.numChanges);
 			var record:PropertyChangeMessage=changes.getChangeAt(0);
@@ -137,7 +139,7 @@ package net.digitalprimates.persistence.state
 			StateRepository.store(author);
 			var book:Book=author.books.getItemAt(0) as Book;
 			book.title="Hibernate in Action";
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(book);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(book);
 			Assert.assertEquals(1, changes.numChanges);
 		}
 
@@ -147,11 +149,11 @@ package net.digitalprimates.persistence.state
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
 			author.publisher.name="Manning";
-			Assert.assertTrue( StateRepository.hasChanges( author ) );
-			Assert.assertTrue( StateRepository.hasChanges( author.publisher ) );
-			var authorChanges : Array = ChangeMessageFactory.getChanges( author );
+			Assert.assertTrue( changeMessageGenerator.hasChanges( author ) );
+			Assert.assertTrue( changeMessageGenerator.hasChanges( author.publisher ) );
+			var authorChanges : Array = changeMessageGenerator.getChanges( author);
 			
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(author.publisher);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(author.publisher);
 			Assert.assertEquals(1, changes.numChanges);
 			Assert.assertTrue(changes.hasChangedProperty("name"));
 			Assert.assertEquals("net.digitalprimates.persistence.hibernate.testObjects.Publisher", changes.owner.remoteClassName);
@@ -162,10 +164,10 @@ package net.digitalprimates.persistence.state
 		{
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
-			var book:Book=getBook(4, "Getting Real", author);
+			var book:Book=getNewBook("Getting Real", author);
 			author.books.addItem(book);
 
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(book);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(book);
 			Assert.assertNotNull(changes);
 			Assert.assertTrue(changes.isNew);
 			Assert.assertTrue(changes.hasChangedProperty("title"));
@@ -190,9 +192,9 @@ package net.digitalprimates.persistence.state
 			var book:Book=getBook(4, "Getting Real", author);
 			book.pages=100;
 			StateRepository.store(book);
-			Assert.assertFalse(StateRepository.hasChanges(book));
+			Assert.assertFalse(changeMessageGenerator.hasChanges(book));
 			book.pages=123;
-			Assert.assertFalse(StateRepository.hasChanges(book));
+			Assert.assertFalse(changeMessageGenerator.hasChanges(book));
 		}
 
 		[Test]
@@ -202,7 +204,7 @@ package net.digitalprimates.persistence.state
 			StateRepository.store(author);
 			var book:Book=getBook(4, "Getting Real", author);
 			author.books.addItem(book);
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(author);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(author);
 			Assert.assertTrue(changes.hasChangedProperty("books"));
 			var bookChanges:CollectionChangeMessage=changes.getPropertyChange("books") as CollectionChangeMessage;
 			Assert.assertNotNull(bookChanges);
@@ -219,7 +221,7 @@ package net.digitalprimates.persistence.state
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
 			author.books.removeItemAt(0);
-			var changes:ObjectChangeMessage=ChangeMessageFactory.getChangesForEntityOnly(author);
+			var changes:ObjectChangeMessage=changeMessageGenerator.getChangesForEntityOnly(author);
 			Assert.assertTrue(changes.hasChangedProperty("books"));
 			var bookChanges:CollectionChangeMessage=changes.getPropertyChange("books") as CollectionChangeMessage;
 			Assert.assertNotNull(bookChanges);
@@ -244,15 +246,15 @@ package net.digitalprimates.persistence.state
 			var book : Book = author.books.getItemAt( 0 ) as Book;
 			book.title = "Antoher";
 			author.publisher.name = "Publisher2"
-			Assert.assertTrue( StateRepository.hasChanges( author ) );
-			Assert.assertTrue( StateRepository.hasChanges( book ) );
-			Assert.assertTrue( StateRepository.hasChanges( author.publisher ) );
+			Assert.assertTrue( new ChangeMessageGenerator().hasChanges( author ) );
+			Assert.assertTrue( new ChangeMessageGenerator().hasChanges( book ) );
+			Assert.assertTrue( new ChangeMessageGenerator().hasChanges( author.publisher ) );
 			
 			StateRepository.removeFromStore( author );
 			
-			Assert.assertFalse( StateRepository.hasChanges( author ) );
-			Assert.assertFalse( StateRepository.hasChanges( book ) );
-			Assert.assertFalse( StateRepository.hasChanges( author.publisher ) );
+			Assert.assertFalse( new ChangeMessageGenerator().hasChanges( author ) );
+			Assert.assertFalse( new ChangeMessageGenerator().hasChanges( book ) );
+			Assert.assertFalse( new ChangeMessageGenerator().hasChanges( author.publisher ) );
 			
 		}
 		[Test]
@@ -274,9 +276,9 @@ package net.digitalprimates.persistence.state
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
 			author.name = "Schwartz";
-			Assert.assertTrue( StateRepository.hasChanges( author ) );
+			Assert.assertTrue( changeMessageGenerator.hasChanges( author ) );
 			author.name = "Bloch"
-			Assert.assertFalse( StateRepository.hasChanges( author ) );
+			Assert.assertFalse( changeMessageGenerator.hasChanges( author ) );
 		}
 		
 		[Test]
@@ -286,9 +288,9 @@ package net.digitalprimates.persistence.state
 			var author:Author=getTestAuthor();
 			StateRepository.store(author);
 			var book : Book = author.books.removeItemAt( 1 ) as Book;
-			Assert.assertTrue( StateRepository.hasChanges( author ) );
+			Assert.assertTrue( changeMessageGenerator.hasChanges( author ) );
 			author.books.addItem( book );
-			Assert.assertFalse( StateRepository.hasChanges( author ) );
+			Assert.assertFalse( changeMessageGenerator.hasChanges( author ) );
 		}
 		
 		
@@ -356,8 +358,13 @@ package net.digitalprimates.persistence.state
 		}
 		internal static function getBook(id:int, title:String, author:Author):Book
 		{
+			var book:Book=getNewBook(title,author);
+			book.proxyKey = id;
+			return book;
+		}
+		internal static function getNewBook(title:String, author:Author):Book
+		{
 			var book:Book=new Book();
-			book.proxyKey=id;
 			book.author=author;
 			book.title=title;
 			return book;
