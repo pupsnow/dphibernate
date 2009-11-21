@@ -29,7 +29,7 @@ public class CollectionChangeMessage extends PropertyChangeMessage {
 		for (ObjectChangeMessage member : getCollectionMembers())
 		{
 			IHibernateProxyDescriptor owner = member.getOwner();
-			if (owner.getRemoteClassName().equals(objectClassName) && owner.getProxyId().equals(entity.getProxyKey()))
+			if (owner.matches(entity))
 			{
 				return true;
 			}
