@@ -5,6 +5,7 @@ package net.digitalprimates.persistence.state
 	import mx.collections.ArrayCollection;
 	import mx.logging.ILogger;
 	import mx.rpc.AsyncToken;
+	import mx.rpc.IResponder;
 	import mx.rpc.Responder;
 	import mx.rpc.events.FaultEvent;
 	import mx.rpc.events.ResultEvent;
@@ -21,7 +22,7 @@ package net.digitalprimates.persistence.state
 		{
 		}
 		
-		public static function save( object : IHibernateProxy ) : AsyncToken
+		public static function save( object : IHibernateProxy , responder : IResponder = null ) : AsyncToken
 		{
 //			var stopwatch : Stopwatch = new Stopwatch();
 //			stopwatch.start("HibenrateUpdater.save");
@@ -30,12 +31,18 @@ package net.digitalprimates.persistence.state
 			{
 				ro = HibernateManaged.defaultHibernateService;
 			}
-			var changes : Array = ChangeMessageFactory.getChanges( object );
+			var generator : ChangeMessageGenerator = new ChangeMessageGenerator();
+			
+			var changes : Array = generator.getChanges( object );
 //			log.info( "ChangeMessageFactory.getChanges completed in {0}ms" , stopwatch.getTimeInMilliSeconds() );
 			var token : AsyncToken = ro.saveProxy( object , changes );
 			token.ro = ro;
 			token.obj = object;
 			token.addResponder( new Responder( saveCompleted , saveFailed ) );
+			if ( responder )
+			{
+				token.addResponder( responder );
+			}
 			StateRepository.saveStarted( object );
 //			stopwatch.stop();
 //			log.info( "Save process passed to server in {0}ms" , stopwatch.getTimeInMilliSeconds() );
@@ -58,11 +65,16 @@ package net.digitalprimates.persistence.state
 				// TODO : Need to encapsulate this key generation
 				var oldKey : String = changeResult.remoteClassName + "::" + changeResult.oldId;
 				var proxy : IHibernateProxy = StateRepository.getStoredObject( oldKey );
-				if ( !proxy )
-				log.error( "Cannot find proxy in StoreRepository with key {0} to update.  (New id from save operation is {1})",oldKey,changeResult.newId);
-				proxy.proxyKey = changeResult.newId;
-				var newKey : String = StateRepository.getKey( proxy );
-				StateRepository.updateKey( oldKey , newKey , proxy );
+				if ( proxy )
+				{
+					proxy.proxyKey = changeResult.newId;
+					var newKey : String = StateRepository.getKey( proxy );
+					StateRepository.updateKey( oldKey , newKey , proxy );
+					StateRepository.saveCompleted( proxy );
+				} else {
+					log.error( "Cannot find proxy in StoreRepository with key {0} to update.  (New id from save operation is {1})",oldKey,changeResult.newId);
+				}
+				
 			}
 			
 		}
@@ -71,13 +83,17 @@ package net.digitalprimates.persistence.state
 			trace("Save Failed");
 		}
 		
-		public static function deleteRecord( object : IHibernateProxy ) : AsyncToken
+		public static function deleteRecord( object : IHibernateProxy , responder:IResponder = null) : AsyncToken
 		{
 			var descriptor : HibernateProxyDescriptor = new HibernateProxyDescriptor( object );
 			var changes : Array = [ ObjectChangeMessage.createDeleted( descriptor ) ];
 			var ro : IHibernateRPC = HibernateManaged.getIHibernateRPCForBean( object );
 			var token : AsyncToken = ro.saveProxy( object , changes );
 			token.addResponder( new Responder( deleteCompleted , deleteFailed ) );
+			if ( responder )
+			{
+				token.addResponder(responder);
+			}
 			token.obj = object;
 			return token;
 		}

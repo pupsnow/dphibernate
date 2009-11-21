@@ -29,7 +29,6 @@ package net.digitalprimates.persistence.hibernate.rpc
     import net.digitalprimates.persistence.hibernate.HibernateManaged;
     import net.digitalprimates.persistence.hibernate.IHibernateProxy;
     import net.digitalprimates.persistence.hibernate.IHibernateRPC;
-    import net.digitalprimates.persistence.state.ObjectChangeMessage;
     import net.digitalprimates.util.LogUtil;
 
     use namespace flash_proxy;
@@ -40,6 +39,7 @@ package net.digitalprimates.persistence.hibernate.rpc
     dynamic public class HibernateRemoteObject extends RemoteObject implements IHibernateRPC
     {
 		private var log : ILogger = LogUtil.getLogger( this );
+		
         public function HibernateRemoteObject(destination:String = null)
         {
             super(destination);
@@ -70,5 +70,15 @@ package net.digitalprimates.persistence.hibernate.rpc
 
             return token;
         }
+		
+		private var _stateTrackingEnabled : Boolean = false;
+		public function get stateTrackingEnabled() : Boolean
+		{
+			return _stateTrackingEnabled;
+		}
+		public function set stateTrackingEnabled( value : Boolean ) : void
+		{
+			_stateTrackingEnabled = value;
+		}
     }
 }

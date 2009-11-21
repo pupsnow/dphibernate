@@ -1,30 +1,33 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<flexLibProperties version="1">
+<flexLibProperties includeAllClasses="false" version="1">
   <includeClasses>
-    <classEntry path="mx.data.utils.Managed"/>
-    <classEntry path="net.digitalprimates.util.LogUtil"/>
-    <classEntry path="net.digitalprimates.flex2.mx.utils.BeanUtil"/>
     <classEntry path="mx.data.IManaged"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateBean"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManagedEntry"/>
-    <classEntry path="net.digitalprimates.persistence.state.ChangeMessageFactory"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
-    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeMessageCollection"/>
+    <classEntry path="mx.data.utils.Managed"/>
+    <classEntry path="net.digitalprimates.flex2.mx.utils.BeanUtil"/>
+    <classEntry path="net.digitalprimates.flex2.mx.utils.CustomBeanPopulatorRegistry"/>
+    <classEntry path="net.digitalprimates.flex2.mx.utils.IBeanPopulator"/>
     <classEntry path="net.digitalprimates.flex2.mx.utils.ValueObjectUtil"/>
-    <classEntry path="net.digitalprimates.persistence.state.CollectionChangeMessage"/>
-    <classEntry path="net.digitalprimates.persistence.state.ReadOnlyError"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.ClassUtils"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateRPC"/>
-    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeResult"/>
-    <classEntry path="net.digitalprimates.persistence.state.StateRepository"/>
     <classEntry path="net.digitalprimates.persistence.events.LazyLoadEvent"/>
-    <classEntry path="net.digitalprimates.persistence.state.IHibernateProxyDescriptor"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.ClassUtils"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateBean"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManagedEntry"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateProxy"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateProxy"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateRPC"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
-    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeMessage"/>
-    <classEntry path="net.digitalprimates.persistence.state.PropertyChangeMessage"/>
+    <classEntry path="net.digitalprimates.persistence.state.ChangeMessageGenerator"/>
+    <classEntry path="net.digitalprimates.persistence.state.CollectionChangeMessage"/>
+    <classEntry path="net.digitalprimates.persistence.state.HibernateProxyDescriptor"/>
     <classEntry path="net.digitalprimates.persistence.state.HibernateUpdater"/>
+    <classEntry path="net.digitalprimates.persistence.state.IHibernateProxyDescriptor"/>
+    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeMessage"/>
+    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeMessageCollection"/>
+    <classEntry path="net.digitalprimates.persistence.state.ObjectChangeResult"/>
+    <classEntry path="net.digitalprimates.persistence.state.PropertyChangeMessage"/>
+    <classEntry path="net.digitalprimates.persistence.state.ReadOnlyError"/>
+    <classEntry path="net.digitalprimates.persistence.state.StateRepository"/>
+    <classEntry path="net.digitalprimates.util.LogUtil"/>
   </includeClasses>
   <includeResources>
     <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>

@@ -51,23 +51,25 @@ package net.digitalprimates.persistence.hibernate
         protected static var pendingDictionary:Dictionary = new Dictionary(true);
 
         protected static var hibernateDictionary:Dictionary = new Dictionary(true);
-        
+
         protected static var objectTypeMap:Object = new Object();
 
         protected static var serverCallsEnanabled:Dictionary = new Dictionary(true);
 
         private static var log:ILogger = LogUtil.getLogger(HibernateManaged);
-		
-		private static var _defaultHibernateService : IHibernateRPC;
-		
-		public static function set defaultHibernateService( value : IHibernateRPC ) : void
-		{
-			_defaultHibernateService = value;
-		}
-		public static function get defaultHibernateService() : IHibernateRPC
-		{
-			return _defaultHibernateService;
-		}
+
+        private static var _defaultHibernateService:IHibernateRPC;
+
+        public static function set defaultHibernateService(value:IHibernateRPC):void
+        {
+            _defaultHibernateService = value;
+        }
+
+        public static function get defaultHibernateService():IHibernateRPC
+        {
+            return _defaultHibernateService;
+        }
+
         public static function areServerCallsEnabled(ro:IHibernateRPC):Boolean
         {
             return (serverCallsEnanabled[ro] != false);
@@ -302,7 +304,9 @@ package net.digitalprimates.persistence.hibernate
             disableServerCalls(token.ro as IHibernateRPC);
             token.obj.proxyInitialized = true;
 
+            StateRepository.ignorePropertyChanges = true;
             BeanUtil.populateBean(event.result, classDef, token.obj, new Dictionary(true), token.parent, token.parentProperty, token.ro as IHibernateRPC);
+            StateRepository.ignorePropertyChanges = false;
             //ValueObjectUtil.populateVO( event.result, classDef, token.obj, new Dictionary( true ) ); 
 
             //In theory, this part would no longer be needed after the changes to populateBean
@@ -313,7 +317,7 @@ package net.digitalprimates.persistence.hibernate
 
             if (token.obj is IEventDispatcher)
             {
-                IEventDispatcher(token.obj).dispatchEvent(new LazyLoadEvent(LazyLoadEvent.complete, token.parentProperty, token.parent , true, true));
+                IEventDispatcher(token.obj).dispatchEvent(new LazyLoadEvent(LazyLoadEvent.complete, token.parentProperty, token.parent, true, true));
             }
         }
 
@@ -325,7 +329,7 @@ package net.digitalprimates.persistence.hibernate
 
             if (token && token.obj && token.obj is IEventDispatcher)
             {
-                IEventDispatcher(token.obj).dispatchEvent(new LazyLoadEvent(LazyLoadEvent.failed, token.parentProperty, token.parent , true, true));
+                IEventDispatcher(token.obj).dispatchEvent(new LazyLoadEvent(LazyLoadEvent.failed, token.parentProperty, token.parent, true, true));
             }
         }
 
@@ -339,18 +343,25 @@ package net.digitalprimates.persistence.hibernate
         protected static function handleHibernateResult(event:ResultEvent):void
         {
             disableServerCalls(event.token.ro);
-
-            manageChildTree(event.result, null, null, event.token.ro);
-            if ( event.result is IHibernateProxy )
-            {
-			StateRepository.store( event.result as IHibernateProxy );
-            } else if ( event.result is IList )
-            {
-            	StateRepository.storeList( event.result as IList ); 
-            }
+			var remoteService : IHibernateRPC = IHibernateRPC(event.token.ro);
+            manageChildTree(event.result, null, null, remoteService);
+			if ( remoteService.stateTrackingEnabled )
+			{
+				manageStateOfResultObject( event );
+			}
             enableServerCalls(event.token.ro);
         }
-
+		protected static function manageStateOfResultObject( event : ResultEvent ) : void
+		{
+			if (event.result is IHibernateProxy)
+			{
+				StateRepository.store(event.result as IHibernateProxy);
+			}
+			else if (event.result is IList)
+			{
+				StateRepository.storeList(event.result as IList);
+			}
+		}
         public static function repopulateObject(oldObject:IHibernateProxy, newObject:IHibernateProxy, classDef:Class):void
         {
             var existingEntry:HibernateManagedEntry = hibernateDictionary[oldObject] as HibernateManagedEntry;

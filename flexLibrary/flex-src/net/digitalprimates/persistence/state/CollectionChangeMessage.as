@@ -7,10 +7,11 @@ package net.digitalprimates.persistence.state
 	public class CollectionChangeMessage extends PropertyChangeMessage
 	{
 		private var _collection : IList
-		public function CollectionChangeMessage( propertyName : String , collection : IList )
+		public function CollectionChangeMessage( propertyName : String , collection : IList , generator  : ChangeMessageGenerator = null )
 		{
 			super( propertyName , null , null );
 			_collection = collection;
+			_generator = ( generator ) ? generator :  new ChangeMessageGenerator();
 		}
 		
 		public override function get newValue() : Object // Array of ObjectChangeMessage
@@ -18,20 +19,41 @@ package net.digitalprimates.persistence.state
 			var result : Array = []
 			for each ( var proxy : IHibernateProxy in _collection )
 			{
-				if ( StateRepository.hasChanges( proxy  ) )
+				var changes : ObjectChangeMessage = generator.getChangesForEntityOnly( proxy );
+				if ( changes && changes.numChanges > 0 )
 				{
-					result.push( ChangeMessageFactory.getChangesForEntityOnly( proxy ) )
+					result.push( changes );
 				} else {
 					result.push( generateNoChangeMessage( proxy ) );
 				}
+				/*
+				if ( StateRepository.hasChanges( proxy  ) )
+				{
+					result.push( ChangeMessageGenerator.getChangesForEntityOnly( proxy ) )
+				} else {
+					result.push( generateNoChangeMessage( proxy ) );
+				}
+				*/
 			}
 			return result;
 		}
-		
+		override public function get oldAndNewValueMatch() : Boolean
+		{
+			return false;
+		}
 		private function generateNoChangeMessage( proxy : IHibernateProxy ) : ObjectChangeMessage
 		{
 			var message : ObjectChangeMessage = new ObjectChangeMessage( new HibernateProxyDescriptor( proxy ) );
 			return message;
+		}
+		private var _generator : ChangeMessageGenerator;
+		public function get generator() : ChangeMessageGenerator
+		{
+			return _generator;
+		}
+		public function set generator( value : ChangeMessageGenerator ) : void
+		{
+			_generator = value;
 		}
 	}
 }

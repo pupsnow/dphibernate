@@ -20,6 +20,7 @@
 package net.digitalprimates.persistence.hibernate
 {
 	import mx.rpc.AsyncToken;
+	import mx.rpc.IResponder;
 
 	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy")]
 	public interface IHibernateProxy
@@ -29,7 +30,7 @@ package net.digitalprimates.persistence.hibernate
 
 		function get proxyInitialized():Boolean;
 		function set proxyInitialized( value:Boolean ):void;
-		function save() : AsyncToken;
-		function deleteRecord() : AsyncToken;
+		function save(responder:IResponder=null) : AsyncToken;
+		function deleteRecord(responder:IResponder=null) : AsyncToken;
 	}
 }

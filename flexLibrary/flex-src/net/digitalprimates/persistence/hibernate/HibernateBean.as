@@ -20,6 +20,7 @@
 package net.digitalprimates.persistence.hibernate 
 {
 	import mx.rpc.AsyncToken;
+	import mx.rpc.IResponder;
 	
 	import net.digitalprimates.persistence.state.HibernateUpdater;
 	import net.digitalprimates.persistence.state.StateRepository;
@@ -46,13 +47,13 @@ package net.digitalprimates.persistence.hibernate
 		public function set proxyInitialized( value:Boolean ):void {
 			__proxyInitialized = value;
 		}
-		public function save() : AsyncToken
+		public function save(responder:IResponder=null) : AsyncToken
 		{
-			return HibernateUpdater.save( this );
+			return HibernateUpdater.save( this , responder);
 		}
-		public function deleteRecord() : AsyncToken
+		public function deleteRecord(responder:IResponder=null) : AsyncToken
 		{
-			return HibernateUpdater.deleteRecord( this );
+			return HibernateUpdater.deleteRecord( this , responder );
 		}
 	}
 }

@@ -37,5 +37,9 @@ package net.digitalprimates.persistence.state
 		{
 			throw new ReadOnlyError();
 		}
+		public function get oldAndNewValueMatch() : Boolean
+		{
+			return oldValue == newValue;
+		}
 	}
 }
