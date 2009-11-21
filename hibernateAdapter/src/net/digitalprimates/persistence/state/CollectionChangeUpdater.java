@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
@@ -43,7 +44,7 @@ public class CollectionChangeUpdater extends PropertyChangeUpdater {
 		for(ObjectChangeMessage member : collectionMembers)
 		{
 			
-			List<ObjectChangeResult> memberUpdateResult = objectChangeUpdater.update(member);
+			Set<ObjectChangeResult> memberUpdateResult = objectChangeUpdater.update(member);
 			result.addAll(memberUpdateResult);
 			IHibernateProxyDescriptor targetProxy = member.getOwner();
 			if (member.getIsNew())
@@ -63,7 +64,11 @@ public class CollectionChangeUpdater extends PropertyChangeUpdater {
 					
 				}
 			}
-			entityCollection.add(proxyResolver.resolve(targetProxy));
+			Object newMember = proxyResolver.resolve(targetProxy);
+			if (!entityCollection.contains(newMember))
+			{
+				entityCollection.add(newMember);
+			}
 		}
 		removeDeletedMembers();
 		return result;
