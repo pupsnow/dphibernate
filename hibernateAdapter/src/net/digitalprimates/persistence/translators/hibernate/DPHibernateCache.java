@@ -20,7 +20,7 @@ public class DPHibernateCache {
 	}
 
 	public Object getCacheKey(AbstractPersistentCollection obj) {
-		if (obj.wasInitialized()) {
+		if (obj.wasInitialized() && obj.getRole() != null && obj.getKey() != null) {
 			return obj.getRole() + "_" + obj.getKey().toString();
 		} else {
 			return null;

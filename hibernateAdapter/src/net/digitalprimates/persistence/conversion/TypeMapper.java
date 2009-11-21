@@ -5,12 +5,24 @@ import java.util.List;
 
 
 public class TypeMapper {
+//	Mapper mapper;
 	List<IConverter> converters;
 	public TypeMapper()
 	{
+//		this(new DozerBeanMapper());
 		converters = new ArrayList<IConverter>();
 		converters.add(new DateCalendarConverter());
+		converters.add(new BooleanConverter());
+		converters.add(new NumberConverter());
+
 	}
+	/*
+	public TypeMapper(Mapper mapper)
+	{
+	
+//		this.mapper = mapper;
+	}
+	*/
 	
 	public Object convert(Object source,Class<?> targetClass)
 	{

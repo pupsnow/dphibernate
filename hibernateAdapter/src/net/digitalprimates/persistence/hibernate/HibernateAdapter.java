@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import net.digitalprimates.persistence.translators.ISerializer;
 import net.digitalprimates.persistence.translators.SerializationFactory;
 
 import flex.messaging.Destination;
@@ -61,7 +62,7 @@ public class HibernateAdapter extends JavaAdapter
 		property_getCurrentSessionMethod = adapterHibernateProps.getPropertyAsString("getCurrentSessionMethod", property_getCurrentSessionMethod);
 
 		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-		
+
 		operations = new ArrayList<DPHibernateOperation>();
 		loadMethodName = getLoadMethodName(destProps, adapterHibernateProps);
 		saveMethodName = getSaveMethodName(destProps, adapterHibernateProps);
@@ -70,7 +71,8 @@ public class HibernateAdapter extends JavaAdapter
 	}
 
 
-	private String getSaveMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps) {
+	private String getSaveMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps)
+	{
 		return getConfigProperty(destProps, adapterHibernateProps, "saveMethod", default_saveMethod);
 	}
 
@@ -79,12 +81,15 @@ public class HibernateAdapter extends JavaAdapter
 	{
 		return getConfigProperty(destProps, adapterHibernateProps, "loadMethod", default_loadMethod);
 	}
+
+
 	private String getConfigProperty(ConfigMap destProps, ConfigMap adapterHibernateProps, String propertyName, String defaultValue)
 	{
 		String result;
 		result = destProps.getPropertyAsString(propertyName, null);
-		if (result != null) return result;
-		
+		if (result != null)
+			return result;
+
 		result = adapterHibernateProps.getPropertyAsString(propertyName, null);
 		return (result != null) ? result : defaultValue;
 	}
@@ -109,7 +114,7 @@ public class HibernateAdapter extends JavaAdapter
 			// (RemotingDestinationControl)this.getControl().getParentControl();//destination;
 			RemotingMessage remotingMessage = (RemotingMessage) message;
 
-			for (DPHibernateOperation operation : operations )
+			for (DPHibernateOperation operation : operations)
 			{
 				if (operation.appliesForMessage(remotingMessage))
 				{
@@ -124,14 +129,14 @@ public class HibernateAdapter extends JavaAdapter
 			 * their mxml // note: This can be turned off at the desination
 			 * level by defined a <source/> other then "*" try { FactoryInstance
 			 * factoryInstance = remotingDestination.getFactoryInstance();
-			 * String className = factoryInstance.getSource();
-			 *  // check for * wildcard in destination, and if exists use source
-			 * defined in mxml if( "*".equals(className) ) { sourceClass =
+			 * String className = factoryInstance.getSource(); // check for *
+			 * wildcard in destination, and if exists use source defined in mxml
+			 * if( "*".equals(className) ) { sourceClass =
 			 * remotingMessage.getSource();
 			 * factoryInstance.setSource(sourceClass); } }catch( Throwable ex ){
 			 * ex.printStackTrace();}
 			 */
-			System.out.println("{operation})****************" +remotingMessage.getOperation());
+			System.out.println("{operation})****************" + remotingMessage.getOperation());
 			// Deserialize the incoming object data
 			List inArgs = remotingMessage.getParameters();
 			if (inArgs != null && inArgs.size() > 0)
@@ -139,10 +144,10 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-						Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
-						remotingMessage.setParameters((List) o);
+					Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
+					remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
-					System.out.println("{deserialize} " +(e1-s1));
+					System.out.println("{deserialize} " + (e1 - s1));
 					// remotingMessage.setBody(body);
 				} catch (Exception ex)
 				{
@@ -156,18 +161,19 @@ public class HibernateAdapter extends JavaAdapter
 			}
 
 			long s2 = new Date().getTime();
-				// invoke the user class.method()
-				results = super.invoke(remotingMessage);
+			// invoke the user class.method()
+			results = super.invoke(remotingMessage);
 			long e2 = new Date().getTime();
-			System.out.println("{invoke} " +(e2-s2));
+			System.out.println("{invoke} " + (e2 - s2));
 
 			// serialize the result out
 			try
 			{
 				long s3 = new Date().getTime();
-					results = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER).translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
+				ISerializer serializer = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER);
+				results = serializer.translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
 				long e3 = new Date().getTime();
-				System.out.println("{serialize} " +(e3-s3));
+				System.out.println("{serialize} " + (e3 - s3));
 			} catch (Exception ex)
 			{
 				ex.printStackTrace();

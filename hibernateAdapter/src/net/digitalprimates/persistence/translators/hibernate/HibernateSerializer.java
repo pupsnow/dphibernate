@@ -36,6 +36,7 @@ import java.util.UUID;
 import javax.annotation.Resource;
 
 import net.digitalprimates.persistence.annotations.EagerlySerialize;
+import net.digitalprimates.persistence.annotations.NeverSerialize;
 import net.digitalprimates.persistence.annotations.NoLazyLoadOnSerialize;
 import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
@@ -45,6 +46,7 @@ import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.collection.AbstractPersistentCollection;
+import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentMap;
 import org.hibernate.engine.SessionImplementor;
@@ -203,6 +205,11 @@ public class HibernateSerializer implements ISerializer
 				try
 				{
 					Object val = readMethod.invoke(obj, null);
+					boolean neverSerialize = (readMethod.getAnnotation(NeverSerialize.class) != null);
+					if (neverSerialize)
+					{
+						continue;
+					}
 					boolean eagerlySerialize = (readMethod.getAnnotation(EagerlySerialize.class) != null);
 					Object newVal = translate(val,eagerlySerialize);
 					asObject.put(propName, newVal);
@@ -297,6 +304,10 @@ public class HibernateSerializer implements ISerializer
 			// return proxies;
 		} else
 		{
+			if (!collection.wasInitialized())
+			{
+				collection.forceInitialization();
+			}
 			Object c = collection.getValue();
 			List items = new ArrayList();
 			cache.store(key, items);
