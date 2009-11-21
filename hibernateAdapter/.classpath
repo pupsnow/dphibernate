@@ -58,7 +58,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/commons-lang-2.3.jar"/>
-	<classpathentry kind="lib" path="lib/lambdaj-1.10.jar"/>
 	<classpathentry kind="lib" path="lib/spring-security-core-2.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/lambdaj-2.0-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="lib/dozer-5.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
