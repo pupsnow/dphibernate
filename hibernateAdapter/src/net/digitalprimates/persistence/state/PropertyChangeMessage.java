@@ -30,5 +30,10 @@ public class PropertyChangeMessage {
 	public Object getNewValue() {
 		return newValue;
 	}
+	@Override
+	public String toString()
+	{
+		return propertyName + "=" + newValue;
+	}
 	
 }

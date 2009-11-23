@@ -113,4 +113,9 @@ public class ObjectChangeMessage {
 		}
 		return false;
 	}
+	@Override
+	public String toString()
+	{
+		return owner.toString();
+	}
 }
