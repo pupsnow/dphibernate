@@ -55,5 +55,16 @@ package net.digitalprimates.persistence.hibernate
 		{
 			return HibernateUpdater.deleteRecord( this , responder );
 		}
+		[Transient]
+		public function get stateManaged() : Boolean
+		{
+			return StateRepository.contains(this);
+		}
+		public function manage() : void
+		{
+			if ( stateManaged ) return;
+			StateRepository.store( this );
+		}
+
 	}
 }
