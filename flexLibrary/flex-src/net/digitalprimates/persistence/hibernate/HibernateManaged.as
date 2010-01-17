@@ -36,6 +36,7 @@ package net.digitalprimates.persistence.hibernate
     import mx.utils.ObjectUtil;
     
     import net.digitalprimates.flex2.mx.utils.BeanUtil;
+    import net.digitalprimates.persistence.collections.ManagedArrayList;
     import net.digitalprimates.persistence.events.LazyLoadEvent;
     import net.digitalprimates.persistence.state.StateRepository;
     import net.digitalprimates.util.LogUtil;
@@ -94,12 +95,12 @@ package net.digitalprimates.persistence.hibernate
         {
             var ro:Object = hibernateDictionary[obj];
             if (!ro)
-                return null;
+                return defaultHibernateService;
             if (ro is IHibernateRPC)
                 return ro as IHibernateRPC;
             if (ro is HibernateManagedEntry)
                 return HibernateManagedEntry(ro).ro;
-            return null;
+            return defaultHibernateService;
         }
 
         public static function manageChildTree(object:Object, parent:Object = null, propertyName:String = null, ro:IHibernateRPC = null):void
@@ -157,10 +158,7 @@ package net.digitalprimates.persistence.hibernate
             }
             else if (object is ArrayCollection)
             {
-                for (var i:int = 0; i < object.length; i++)
-                {
-                    manageChildHibernateObjects(object[i], object, String(i), ro)
-                }
+				manageArrayCollection(ArrayCollection(object),ro);
             }
             else if (!ObjectUtil.isSimple(object))
             {
@@ -170,6 +168,24 @@ package net.digitalprimates.persistence.hibernate
                 }
             }
         }
+private static function manageArrayCollection(collection:ArrayCollection,ro:IHibernateRPC):void
+{
+	var isPagedCollection : Boolean = false;
+	for (var i:int = 0; i < collection.length; i++)
+	{
+		var collectionMember : Object = collection[i];
+		manageChildHibernateObjects(collectionMember,collection, String(i), ro)
+		if (collectionMember is IHibernateProxy && IHibernateProxy(collectionMember).proxyInitialized == false)
+		{
+			isPagedCollection = true;
+		}
+	}
+	if (isPagedCollection)
+	{
+		var managedArrayList:ManagedArrayList = new ManagedArrayList(collection.source);
+		collection.list = managedArrayList;
+	}
+}
 
         public static function manageHibernateObject(obj:IHibernateProxy, parent:Object, parentProperty:String, ro:IHibernateRPC):void
         {

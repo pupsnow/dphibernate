@@ -30,7 +30,5 @@ package net.digitalprimates.persistence.hibernate
 
 		function get proxyInitialized():Boolean;
 		function set proxyInitialized( value:Boolean ):void;
-		function save(responder:IResponder=null) : AsyncToken;
-		function deleteRecord(responder:IResponder=null) : AsyncToken;
 	}
 }

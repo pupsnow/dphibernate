@@ -27,10 +27,6 @@ package net.digitalprimates.persistence.state
 //			var stopwatch : Stopwatch = new Stopwatch();
 //			stopwatch.start("HibenrateUpdater.save");
 			var ro : IHibernateRPC = HibernateManaged.getIHibernateRPCForBean( object );
-			if ( !ro )
-			{
-				ro = HibernateManaged.defaultHibernateService;
-			}
 			var generator : ChangeMessageGenerator = new ChangeMessageGenerator();
 			
 			var changes : Array = generator.getChanges( object );
