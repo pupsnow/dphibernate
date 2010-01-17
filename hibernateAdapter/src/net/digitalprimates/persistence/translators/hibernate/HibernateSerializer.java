@@ -80,7 +80,8 @@ public class HibernateSerializer implements ISerializer
 	@Resource
 	private SessionFactory sessionFactory;
 
-
+	private int pageSize = -1;
+	
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
 		this.sessionFactory = sessionFactory;
@@ -95,17 +96,7 @@ public class HibernateSerializer implements ISerializer
 	@Transactional
 	public Object translate(String sessionFactoryClazz, String getSessionMethod, Object obj)
 	{
-		// this.sessionManager = new SessionManager(sessionFactoryClazz,
-		// getSessionMethod);
-		Session session = getSessionFactory().getCurrentSession();
-		/*
-		boolean objectInSession = session.contains(obj);
-		/*
-		if (!objectInSession)
-		{
-			throw new RuntimeException("Object for translation not in session.  Ensure either OpenSessionInViewFilter or OpenSessionInViewInterceptor is configured");
-		}
-		*/
+		// Note - sessionFactoryClazz and getSessionMethod ignored in this serializer, as we use the sessionFactory from Spring
 		return translate(obj);
 	}
 
@@ -136,15 +127,17 @@ public class HibernateSerializer implements ISerializer
 		return result;
 	}
 
-
+	private boolean isLazyProxy(Object obj)
+	{
+		return obj instanceof HibernateProxy && (((HibernateProxy) obj).getHibernateLazyInitializer().isUninitialized());
+	}
 	private Object writeBean(Object source, Object key, boolean eagerlySerialize)
 	{
 		Object result = null;
-		boolean isLazyProxy = source instanceof HibernateProxy && (((HibernateProxy) source).getHibernateLazyInitializer().isUninitialized());
 
-		if (isLazyProxy && !eagerlySerialize)
+		if (isLazyProxy(source) && !eagerlySerialize)
 		{
-			result = writeHibernateProxy(source, key);
+			result = writeHibernateProxy((HibernateProxy) source, key);
 		} else if (source instanceof PersistentMap)
 		{
 			result = writePersistantMap(source, result, key);
@@ -241,11 +234,33 @@ public class HibernateSerializer implements ISerializer
 		Iterator itr = ((Collection) obj).iterator();
 		while (itr.hasNext())
 		{
-			Object o = itr.next();
-			list.add(translate(o));
+			Object collectionMemeber = itr.next();
+			Object translatedCollectionMember;
+			Object collectionMemeberCacheKey = cache.getCacheKey(collectionMemeber);
+			if (getPageSize() != -1 && list.size() > getPageSize())
+			{
+				translatedCollectionMember = getPagedCollectionProxy(collectionMemeber,collectionMemeberCacheKey);
+			} else {
+				translatedCollectionMember = translate(collectionMemeber);
+			}
+			list.add(translatedCollectionMember);
 		}
 		result = list;
 		return result;
+	}
+
+
+	private Object getPagedCollectionProxy(Object collectionMemeber, Object cacheKey)
+	{
+		if (isLazyProxy(collectionMemeber))
+		{
+			return writeHibernateProxy((HibernateProxy) collectionMemeber, cacheKey);
+		} else if (collectionMemeber instanceof IHibernateProxy) {
+			return generateDpHibernateProxy(collectionMemeber, ((IHibernateProxy)collectionMemeber).getProxyKey(), cacheKey);
+		} else { // Default... we can't provide a proxy for this item, so translate it.
+			return  translate(collectionMemeber);
+		}
+
 	}
 
 
@@ -353,11 +368,11 @@ public class HibernateSerializer implements ISerializer
 	}
 
 
-	private Object writeHibernateProxy(Object obj, Object key)
+	private Object writeHibernateProxy(HibernateProxy obj, Object key)
 	{
-		Object result;
-		HibernateProxy hibProxy = (HibernateProxy) obj;
-
+		Object primaryKey = obj.getHibernateLazyInitializer().getIdentifier();
+		return generateDpHibernateProxy(obj, primaryKey, key);
+		/*
 		ASObject as = new ASObject();
 		as.setType(getClassName(obj));
 		as.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
@@ -367,6 +382,22 @@ public class HibernateSerializer implements ISerializer
 		cache.store(key, as);
 		result = as;
 		return result;
+		*/
+	}
+	private Object generateDpHibernateProxy(Object obj, Object objectIdentifier, Object cacheKey)
+	{
+		Object result;
+
+		ASObject as = new ASObject();
+		as.setType(getClassName(obj));
+		as.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
+		as.put(HibernateProxyConstants.PKEY, objectIdentifier);
+		as.put(HibernateProxyConstants.PROXYINITIALIZED, false);// !hibProxy.getHibernateLazyInitializer().isUninitialized());
+
+		cache.store(cacheKey, as);
+		result = as;
+		return result;
+
 	}
 
 
@@ -512,4 +543,15 @@ public class HibernateSerializer implements ISerializer
 		return cache;
 	}
 
+
+	public void setPageSize(int pageSize)
+	{
+		this.pageSize = pageSize;
+	}
+
+
+	public int getPageSize()
+	{
+		return pageSize;
+	}
 }

@@ -37,8 +37,6 @@ public class HibernateAdapter extends JavaAdapter
 	// private String scope = "request";
 	protected Destination destination;
 
-	private String property_hibernateSessionFactoryClass = "";// "net.digitalprimates.persistence.hibernate.tools.HibernateFactory";
-	private String property_getCurrentSessionMethod = "";// "getCurrentSession";
 	private String default_loadMethod = "loadBean";
 	private String default_saveMethod = "saveBean";
 	private String loadMethodName;
@@ -55,21 +53,16 @@ public class HibernateAdapter extends JavaAdapter
 		if (properties == null || properties.size() == 0)
 			return;
 
-		// properties.getProperty("hibernateFactory");
-		ConfigMap adapterProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-		ConfigMap adapterHibernateProps = adapterProps.getPropertyAsMap("sessionFactory", new ConfigMap());
-		property_hibernateSessionFactoryClass = adapterHibernateProps.getPropertyAsString("class", property_hibernateSessionFactoryClass);
-		property_getCurrentSessionMethod = adapterHibernateProps.getPropertyAsString("getCurrentSessionMethod", property_getCurrentSessionMethod);
-
+		ConfigMap adapterProps = properties.getPropertyAsMap("adapterConfig", new ConfigMap());
 		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
 
 		operations = new ArrayList<DPHibernateOperation>();
-		loadMethodName = getLoadMethodName(destProps, adapterHibernateProps);
-		saveMethodName = getSaveMethodName(destProps, adapterHibernateProps);
+		loadMethodName = getLoadMethodName(destProps, adapterProps);
+		setSaveMethodName(getSaveMethodName(destProps, adapterProps));
 		operations.add(new LoadDPProxyOperation(loadMethodName));
-		operations.add(new SaveDPProxyOperation(saveMethodName));
+		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
 	}
-
+	
 
 	private String getSaveMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps)
 	{
@@ -144,7 +137,7 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-					Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
+					Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
 					remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " + (e1 - s1));
@@ -171,7 +164,7 @@ public class HibernateAdapter extends JavaAdapter
 			{
 				long s3 = new Date().getTime();
 				ISerializer serializer = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER);
-				results = serializer.translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
+				results = serializer.translate(null,null, results);
 				long e3 = new Date().getTime();
 				System.out.println("{serialize} " + (e3 - s3));
 			} catch (Exception ex)
@@ -186,6 +179,30 @@ public class HibernateAdapter extends JavaAdapter
 		}
 
 		return results;
+	}
+
+
+	public void setLoadMethodName(String loadMethodName)
+	{
+		this.loadMethodName = loadMethodName;
+	}
+
+
+	public String getLoadMethodName()
+	{
+		return loadMethodName;
+	}
+
+
+	public void setSaveMethodName(String saveMethodName)
+	{
+		this.saveMethodName = saveMethodName;
+	}
+
+
+	public String getSaveMethodName()
+	{
+		return saveMethodName;
 	}
 
 }
