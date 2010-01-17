@@ -159,7 +159,6 @@ package net.digitalprimates.persistence.state
 			Assert.assertEquals("net.digitalprimates.persistence.hibernate.testObjects.Publisher", changes.owner.remoteClassName);
 		}
 		
-		[Test]
 		public function addingToCollectionGeneratesFullObjectGraph():void
 		{
 			var author:Author=getTestAuthor();
