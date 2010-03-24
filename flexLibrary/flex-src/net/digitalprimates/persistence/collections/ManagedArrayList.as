@@ -11,7 +11,6 @@ package net.digitalprimates.persistence.collections
 	import mx.rpc.Responder;
 	import mx.rpc.events.FaultEvent;
 	import mx.rpc.events.ResultEvent;
-	import mx.utils.ObjectUtil;
 	
 	import net.digitalprimates.persistence.hibernate.HibernateManaged;
 	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
@@ -22,6 +21,7 @@ package net.digitalprimates.persistence.collections
 	{
 		private var pendingItems : Dictionary = new Dictionary(); // Of AsyncToken,PendingItem
 		private var log : ILogger = LogUtil.getLogger(this);
+		private var loadingIndexes:Dictionary = new Dictionary(); // Of index,index
 		public function ManagedArrayList(source:Array=null)
 		{
 			super(source);
@@ -37,6 +37,9 @@ package net.digitalprimates.persistence.collections
 		}
 		private function handleRemoteItem(proxy:IHibernateProxy,index:int,prefetch:int):void
 		{
+			// Optomized exit..
+			if (indexCurrentlyBeingLoaded(index))
+				return;
 			var remoteObject : IHibernateRPC = HibernateManaged.getIHibernateRPCForBean( proxy );
 			if (remoteObject == null)
 			{
@@ -49,9 +52,22 @@ package net.digitalprimates.persistence.collections
 			var itemPendingError : ItemPendingError = new ItemPendingError("Item is pending");
 			var pendingItem:PendingItem = new PendingItem(itemPendingError,index);
 			pendingItems[token] = pendingItem;
+			setIndexLoading(index);
 //			throw itemPendingError;
 		}
 		
+		private function indexCurrentlyBeingLoaded(index:int):Boolean
+		{
+			return loadingIndexes[index] != null;
+		}
+		private function setIndexLoading(index:int):void
+		{
+			loadingIndexes[index] = true;
+		}
+		private function setIndexLoaded(index:int):void
+		{
+			delete loadingIndexes[index];
+		}
 		private function onPendingItemLoaded(data:Object):void
 		{
 			var resultEvent:ResultEvent = ResultEvent(data);
@@ -63,7 +79,19 @@ package net.digitalprimates.persistence.collections
 				return;
 			}
 			var result:Object = resultEvent.result;
-			this.setItemAt(result,pendingItem.index);
+			setIndexLoaded(pendingItem.index);
+			// HACK FOR DEBUGGING...
+			try
+			{
+				this.setItemAt(result,pendingItem.index);
+			} catch (e : Error)
+			{
+				if (e.message == "invalidIndex")
+				{
+					// This error is thrown by spark.layouts.supportClasses.LinearLayoutVector - it appears to be a bug.
+					// Swallow the error and continue
+				}
+			}
 			for each ( var responder : IResponder in pendingItem.error.responders )
 			{
 				responder.result(data);
@@ -72,11 +100,12 @@ package net.digitalprimates.persistence.collections
 		}
 		private function onFault(info:Object):void
 		{
-			log.error("Fault when trying to load paged collection data",ObjectUtil.toString(info));
 			var fault : FaultEvent = info as FaultEvent;
+			log.error("Fault when trying to load paged collection data - " + fault.fault.faultString);
 			if (!fault) return;
 			var token:AsyncToken = fault.token;
 			var pendingItem : PendingItem = pendingItems[token];
+			setIndexLoaded(pendingItem.index);
 			for each ( var responder : IResponder in pendingItem.error.responders )
 			{
 				responder.fault( info );

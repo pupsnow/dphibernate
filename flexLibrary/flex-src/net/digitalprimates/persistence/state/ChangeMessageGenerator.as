@@ -35,7 +35,16 @@ package net.digitalprimates.persistence.state
 		public function getChanges(object:IHibernateProxy, cascade:Boolean=true, includeUnchangedObject:Boolean=false):Array // Of ObjectChangeMessage
 		{
 			var changeCollection:ObjectChangeMessageCollection=doGetChanges(object, cascade, includeUnchangedObject);
-			return changeCollection.changeMessages;
+			return cloneObjectChangeMessages(changeCollection);
+		}
+		private function cloneObjectChangeMessages(changeMessageCollection:ObjectChangeMessageCollection):Array
+		{
+			var result:Array =[];
+			for each (var objectChangeMessage:ObjectChangeMessage in changeMessageCollection.changeMessages)
+			{
+				result.push(objectChangeMessage.clone());
+			}
+			return result;
 		}
 
 

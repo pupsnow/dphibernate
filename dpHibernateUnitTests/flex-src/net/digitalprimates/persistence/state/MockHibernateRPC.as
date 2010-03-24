@@ -24,6 +24,13 @@ package net.digitalprimates.persistence.state
 			record("saveProxy" , hibernateProxy );
 			return expectedReturnFor( "saveProxy" ) as AsyncToken;
 		}
-		
+		private var _stateTrackingEnabled : Boolean;
+		public function get stateTrackingEnabled() : Boolean {
+			return _stateTrackingEnabled;
+		}
+		public function set stateTrackingEnabled( value : Boolean ) : void
+		{
+			_stateTrackingEnabled = value;
+		}
 	}
 }

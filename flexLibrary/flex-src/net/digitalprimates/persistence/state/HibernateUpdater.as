@@ -34,6 +34,8 @@ package net.digitalprimates.persistence.state
 			var token : AsyncToken = ro.saveProxy( object , changes );
 			token.ro = ro;
 			token.obj = object;
+			token.changes = changes;
+			token.objectChangeMessages = changes 
 			token.addResponder( new Responder( saveCompleted , saveFailed ) );
 			if ( responder )
 			{
@@ -53,23 +55,15 @@ package net.digitalprimates.persistence.state
 			// It would be a more fine-grained approach.
 			var obj : IHibernateProxy = event.token.obj;
 			log.info( "save operation completed on {0}" , StateRepository.getKey( obj ) )
-			StateRepository.saveCompleted( obj );
-			var parentRO : IHibernateRPC = HibernateManaged.getIHibernateRPCForBean( obj );
+			var objectChangeMessages:Array = event.token.objectChangeMessages;
+			for each ( var objectChangeMessage:ObjectChangeMessage in objectChangeMessages)
+			{
+				StateRepository.saveCompleted( objectChangeMessage );
+			}
 			var result : ArrayCollection = event.result as ArrayCollection
 			for each ( var changeResult : ObjectChangeResult in result )
 			{
-				// TODO : Need to encapsulate this key generation
-				var oldKey : String = changeResult.remoteClassName + "::" + changeResult.oldId;
-				var proxy : IHibernateProxy = StateRepository.getStoredObject( oldKey );
-				if ( proxy )
-				{
-					proxy.proxyKey = changeResult.newId;
-					var newKey : String = StateRepository.getKey( proxy );
-					StateRepository.updateKey( oldKey , newKey , proxy );
-					StateRepository.saveCompleted( proxy );
-				} else {
-					log.error( "Cannot find proxy in StoreRepository with key {0} to update.  (New id from save operation is {1})",oldKey,changeResult.newId);
-				}
+				StateRepository.newObjectSaveCompleted( changeResult );
 				
 			}
 			

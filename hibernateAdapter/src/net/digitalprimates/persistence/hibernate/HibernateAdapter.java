@@ -26,6 +26,7 @@ import net.digitalprimates.persistence.translators.ISerializer;
 import net.digitalprimates.persistence.translators.SerializationFactory;
 
 import flex.messaging.Destination;
+import flex.messaging.FlexContext;
 import flex.messaging.config.ConfigMap;
 import flex.messaging.messages.Message;
 import flex.messaging.messages.RemotingMessage;
@@ -106,7 +107,7 @@ public class HibernateAdapter extends JavaAdapter
 			// RemotingDestinationControl remotingDestination =
 			// (RemotingDestinationControl)this.getControl().getParentControl();//destination;
 			RemotingMessage remotingMessage = (RemotingMessage) message;
-
+			
 			for (DPHibernateOperation operation : operations)
 			{
 				if (operation.appliesForMessage(remotingMessage))

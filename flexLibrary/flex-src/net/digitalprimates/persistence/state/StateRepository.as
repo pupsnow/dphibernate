@@ -3,7 +3,7 @@ package net.digitalprimates.persistence.state
 	import flash.events.IEventDispatcher;
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
-
+	
 	import mx.collections.ArrayCollection;
 	import mx.collections.IList;
 	import mx.events.CollectionEvent;
@@ -11,7 +11,7 @@ package net.digitalprimates.persistence.state
 	import mx.events.PropertyChangeEvent;
 	import mx.logging.ILogger;
 	import mx.utils.UIDUtil;
-
+	
 	import net.digitalprimates.persistence.events.LazyLoadEvent;
 	import net.digitalprimates.persistence.hibernate.ClassUtils;
 	import net.digitalprimates.persistence.hibernate.HibernateManaged;
@@ -24,8 +24,6 @@ package net.digitalprimates.persistence.state
 	{
 		private static var log:ILogger=LogUtil.getLogger(StateRepository);
 		private static var changeEntries:Array=new Array(); // Hash of Key : getKey() Value : ObjectChangeMessage
-		private static var savePendingEntities:Object=new Object(); // List of keys of entities being saved
-		private static var pendingChangeEntries:Array=new Array(); // Hash of changes made on entities with pending save Key: getKey() Value : ObjectChangeMessage 
 		private static var listTable:Dictionary=new Dictionary(true) // of Key: IList , value : PropertyReference
 		private static var lazyLoadingEntities:Dictionary=new Dictionary(true);
 		private static var newEntities:Object=new Object();
@@ -110,9 +108,7 @@ package net.digitalprimates.persistence.state
 				dispatcher.addEventListener(LazyLoadEvent.complete, onLazyLoadComplete, false, 0, true);
 			}
 			var descriptor:HibernateProxyDescriptor=new HibernateProxyDescriptor(object);
-			var targetStore:Object=getChangeRepositoryObject(object);
-
-			targetStore[key]=new ObjectChangeMessage(descriptor, objectIsNew);
+			changeEntries[key]=new ObjectChangeMessage(descriptor, objectIsNew);
 			storeComplexProperties(object);
 			return key;
 		}
@@ -195,6 +191,10 @@ package net.digitalprimates.persistence.state
 		private static function resetStateOnChildren(object:IHibernateProxy, recursionTracker:ArrayCollection):void
 		{
 			log.debug("resetSTateOnChildren {0}::{1}", getQualifiedClassName(object), object.proxyKey);
+			if (ClassUtils.isImmutable(object))
+			{
+				return;
+			}
 			var children:ArrayCollection=getChildrenValues(object);
 			resetStateOnList(children, recursionTracker);
 		}
@@ -222,15 +222,12 @@ package net.digitalprimates.persistence.state
 
 		internal static function containsByKey(key:String):Boolean
 		{
-			var repository:Object=getChangeRepositoryObjectByKey(key);
-			return repository[key] != null;
+			return changeEntries[key] != null;
 		}
 
 		public static function reset():void
 		{
 			changeEntries=new Array();
-			savePendingEntities=new Object();
-			pendingChangeEntries=new Array();
 			listTable=new Dictionary();
 		}
 
@@ -249,81 +246,43 @@ package net.digitalprimates.persistence.state
 			return changeMessage.hasChangedProperty(propertyName);
 			//return ChangeMessageGenerator.getChangesForEntityOnly(object).hasChangedProperty(propertyName);
 		}
-
-		public static function saveCompleted(object:IHibernateProxy):void
+		
+		public static function saveCompleted(objectChangeMessage:ObjectChangeMessage):void
 		{
-			log.debug("saveCompleted {0}::{1}", getQualifiedClassName(object), object.proxyKey);
-			var key:String=getKey(object);
-			delete savePendingEntities[key];
-			removeFromStore(object);
-			store(object);
-
-			// Migrate any pending changes
-			var pendingChangeMessage:ObjectChangeMessage=pendingChangeEntries[key];
-			if (pendingChangeMessage)
-			{
-				var currentChangeMessage:ObjectChangeMessage=changeEntries[key];
-				for each (var changedProperty:PropertyChangeMessage in pendingChangeMessage.changedProperties)
-				{
-					currentChangeMessage.addChange(changedProperty);
-				}
-			}
-
+			var targetDescriptor:IHibernateProxyDescriptor = objectChangeMessage.owner;
+			var target:IHibernateProxy = targetDescriptor.source;
+			var key:String = getKey(target);
+			log.debug("saveCompleted: {0}",key);	
+			var sourceChangeMessage:ObjectChangeMessage = changeEntries[key];
+			sourceChangeMessage.markPropertyChangeMessagesUpdated(objectChangeMessage.changedProperties);
 		}
 
 		public static function saveStarted(object:IHibernateProxy):void
 		{
+			/*
 			var key:String=getKey(object);
 			savePendingEntities[key]=object;
 			// Store a baseline for changes that occur while save is in progress
 			store(object);
+			*/
 		}
 
 		internal static function hasPendingSave(proxy:IHibernateProxy):Boolean
 		{
+			return false;
+			/*
 			return hasPendingSaveByKey(getKey(proxy));
+			*/
 		}
 
-		internal static function hasPendingSaveByKey(key:String):Boolean
-		{
-			return savePendingEntities[key] != null;
-		}
-
-		internal static function getPendingChanges(key:String):ObjectChangeMessage
-		{
-			return null;
-		}
 		private static var changesRecursionDictionary:Dictionary=new Dictionary(true);
 
 		internal static function getStoredChanges(object:IHibernateProxy):ObjectChangeMessage
 		{
 			log.debug("getSToredChanges {0}::{1}", getQualifiedClassName(object), object.proxyKey);
 			var key:String=getKey(object);
-			var repository:Object=getChangeRepositoryObject(object);
-			return repository[key];
+			return changeEntries[key];
 		}
-
-		/**
-		 * Returns the object where changes will be stored.
-		 * This value changes if a save is pending */
-		private static function getChangeRepositoryObject(object:IHibernateProxy):Object
-		{
-			return getChangeRepositoryObjectByKey(getKey(object));
-		}
-
-		private static function getChangeRepositoryObjectByKey(key:String):Object
-		{
-			if (hasPendingSaveByKey(key))
-			{
-				return pendingChangeEntries;
-			}
-			else
-			{
-				return changeEntries;
-			}
-		}
-
-
 
 		private static function onPropertyChange(event:PropertyChangeEvent):void
 		{
@@ -350,30 +309,8 @@ package net.digitalprimates.persistence.state
 				log.error("Cannot store change without base change position.  Something's wrong!");
 				return;
 			}
-			var propertyChangeMessage:PropertyChangeMessage;
-			var hasExistingChange:Boolean=false;
-			if (changes.hasChangedProperty(propertyName))
-			{
-				hasExistingChange=true;
-				var existingChange:PropertyChangeMessage=changes.getPropertyChange(propertyName);
-				var mergedChange:PropertyChangeMessage=getPropertyChangeMessage(propertyName, existingChange.oldValue, newValue);
-				propertyChangeMessage=mergedChange;
-			}
-			else
-			{
-				propertyChangeMessage=getPropertyChangeMessage(propertyName, oldValue, newValue);
-			}
-			if (propertyChangeMessage.oldAndNewValueMatch)
-			{
-				if (hasExistingChange)
-				{
-					changes.removeChangeForProperty(propertyName);
-				}
-			}
-			else
-			{
-				changes.addChange(propertyChangeMessage);
-			}
+			var propertyChangeMessage:PropertyChangeMessage = getPropertyChangeMessage(propertyName,oldValue,newValue);
+			changes.addChange(propertyChangeMessage);
 			if (oldValue is IList || newValue is IList)
 			{
 				updateListReferences(oldValue as IList, newValue as IList, proxy, propertyName);
@@ -391,8 +328,12 @@ package net.digitalprimates.persistence.state
 			storeList(newValue, owner, propertyName);
 		}
 
+		internal static function getMutableChildrenValues(object:IHibernateProxy):ArrayCollection // of Object
+		{
+			return getChildrenValues(object,true);
+		}
 		// TODO : This is a util method.  Refactor
-		internal static function getChildrenValues(object:IHibernateProxy):ArrayCollection // of Object
+		internal static function getChildrenValues(object:IHibernateProxy,excludeImmutable:Boolean=false):ArrayCollection // of Object
 		{
 			log.debug("getChildrenValue {0}::{1}", getQualifiedClassName(object), object.proxyKey);
 			var result:ArrayCollection=new ArrayCollection();
@@ -556,7 +497,22 @@ package net.digitalprimates.persistence.state
 			newEntities[key]=key;
 			return key;
 		}
-
+		public static function newObjectSaveCompleted(changeResult:ObjectChangeResult):void
+		{
+			var oldKey : String = changeResult.remoteClassName + "::" + changeResult.oldId;
+			var proxy : IHibernateProxy = getStoredObject( oldKey );
+			if ( proxy )
+			{
+				proxy.proxyKey = changeResult.newId;
+				var newKey : String = getKey( proxy );
+				updateKey( oldKey , newKey , proxy );
+				var changeMessage:ObjectChangeMessage = getStoredChanges( proxy );
+				changeMessage.setIsNotNew();
+			} else {
+				log.error( "Cannot find proxy in StoreRepository with key {0} to update.  (New id from save operation is {1})",oldKey,changeResult.newId);
+			}
+		}
+		
 
 	}
 }

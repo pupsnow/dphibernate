@@ -55,5 +55,10 @@ package net.digitalprimates.persistence.state
 		{
 			_generator = value;
 		}
+		override public function merge(valueToMerge:PropertyChangeMessage):PropertyChangeMessage
+		{
+			var mergeCollection:CollectionChangeMessage = CollectionChangeMessage(valueToMerge);
+			return mergeCollection;
+		}
 	}
 }

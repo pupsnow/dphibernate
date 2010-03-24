@@ -45,7 +45,7 @@ package net.digitalprimates.persistence.state
 		{
 			var author:Author=StateRepositoryTests.getTestAuthor(mockService);
 			StateRepository.store(author);
-			var book:Book=StateRepositoryTests.getBook(4, "Getting Real", author);
+			var book:Book=StateRepositoryTests.getNewBook("Getting Real", author);
 			author.books.addItem(book);
 			
 			var bookChanges : ObjectChangeMessage =  changeMessageGenerator.getChangesForEntityOnly( book );
@@ -58,7 +58,7 @@ package net.digitalprimates.persistence.state
 			author.save();
 			
 			// Update result returned from server:
-			var updateResult : ObjectChangeResult = ObjectChangeResult.create( Book , 4 , 2 );
+			var updateResult : ObjectChangeResult = ObjectChangeResult.create( Book , book.proxyKey , 2 );
 			
 			HibernateUpdater.saveCompleted( ResultEvent.createEvent( new ArrayCollection([ updateResult ]) , returnToken ) );
 			

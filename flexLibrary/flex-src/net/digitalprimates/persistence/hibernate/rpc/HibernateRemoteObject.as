@@ -23,6 +23,9 @@ package net.digitalprimates.persistence.hibernate.rpc
     import mx.core.mx_internal;
     import mx.logging.ILogger;
     import mx.rpc.AsyncToken;
+    import mx.rpc.Responder;
+    import mx.rpc.events.FaultEvent;
+    import mx.rpc.events.ResultEvent;
     import mx.rpc.remoting.mxml.RemoteObject;
     
     import net.digitalprimates.persistence.hibernate.ClassUtils;
@@ -39,6 +42,7 @@ package net.digitalprimates.persistence.hibernate.rpc
     dynamic public class HibernateRemoteObject extends RemoteObject implements IHibernateRPC
     {
 		private var log : ILogger = LogUtil.getLogger( this );
+		private var loadingProxies:Object = new Object();
 		
         public function HibernateRemoteObject(destination:String = null)
         {
@@ -47,11 +51,41 @@ package net.digitalprimates.persistence.hibernate.rpc
 
         public function loadProxy(proxyKey:Object, hibernateProxy:IHibernateProxy):AsyncToken
         {
-        	var className : String =  getQualifiedClassName( hibernateProxy ) 
+        	var className : String =  getQualifiedClassName( hibernateProxy );
+			var qualifiedProxyKey:String = getQualifiedProxyKey(className,proxyKey);
+			if (isProxyLoading(qualifiedProxyKey))
+			{
+				return getTokenForLoadingProxy(qualifiedProxyKey);
+			}
+			
         	log.info( "Reuqesting proxy for {0} id: {1}" , className , proxyKey );
         	var remoteClassName : String = ClassUtils.getRemoteClassName( hibernateProxy );
-            return this.loadDPProxy(proxyKey, remoteClassName);
+            var token : AsyncToken = this.loadDPProxy(proxyKey, remoteClassName);
+			token.addResponder(new Responder(onProxyLoadComplete,onProxyLoadFault));
+			setProxyLoading(qualifiedProxyKey,token);
+			token.qualifiedProxyKey = qualifiedProxyKey;
+			return token;
         }
+		private function getQualifiedProxyKey(className:String,proxyKey:Object):String
+		{
+			return className + proxyKey.toString();
+		}
+		private function isProxyLoading(qualifiedProxyKey:String):Boolean
+		{
+			return loadingProxies.hasOwnProperty(qualifiedProxyKey);
+		}
+		private function setProxyLoading(qualifiedProxyKey:String,token:AsyncToken):void
+		{
+			loadingProxies[qualifiedProxyKey] = token;
+		}
+		private function setProxyLoaded(qualifiedProxyKey:String):void
+		{
+			delete loadingProxies[qualifiedProxyKey];
+		}
+		private function getTokenForLoadingProxy(qualifiedProxyKey:String):AsyncToken
+		{
+			return loadingProxies[qualifiedProxyKey] as AsyncToken;
+		}
 		public function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken
 		{
 			var className : String = getQualifiedClassName( hibernateProxy );
@@ -79,6 +113,16 @@ package net.digitalprimates.persistence.hibernate.rpc
 		public function set stateTrackingEnabled( value : Boolean ) : void
 		{
 			_stateTrackingEnabled = value;
+		}
+		private function onProxyLoadComplete(event:ResultEvent):void
+		{
+			var key:String = event.token.qualifiedProxyKey;
+			setProxyLoaded(key);
+		}
+		private function onProxyLoadFault(fault:FaultEvent):void
+		{
+			var key:String = fault.token.qualifiedProxyKey;
+			setProxyLoaded(key);
 		}
     }
 }
