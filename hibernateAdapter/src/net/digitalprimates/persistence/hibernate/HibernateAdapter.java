@@ -138,7 +138,7 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-					Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
+					Object o = SerializationFactory.getDeserializer().translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
 					remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " + (e1 - s1));
@@ -164,8 +164,8 @@ public class HibernateAdapter extends JavaAdapter
 			try
 			{
 				long s3 = new Date().getTime();
-				ISerializer serializer = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER);
-				results = serializer.translate(null,null, results);
+				ISerializer serializer = SerializationFactory.getSerializer(results);
+				results = serializer.serialize();
 				long e3 = new Date().getTime();
 				System.out.println("{serialize} " + (e3 - s3));
 			} catch (Exception ex)

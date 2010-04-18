@@ -19,8 +19,10 @@
 package net.digitalprimates.persistence.translators.hibernate;
 
 import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,13 +42,11 @@ import net.digitalprimates.persistence.annotations.NeverSerialize;
 import net.digitalprimates.persistence.annotations.NoLazyLoadOnSerialize;
 import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
-import net.digitalprimates.persistence.translators.ISerializer;
+import net.digitalprimates.persistence.translators.AbstractSerializer;
 
 import org.hibernate.Query;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.collection.AbstractPersistentCollection;
-import org.hibernate.collection.PersistentBag;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentMap;
 import org.hibernate.engine.SessionImplementor;
@@ -70,8 +70,18 @@ import flex.messaging.io.amf.ASObject;
  */
 @SuppressWarnings("unchecked")
 @Transactional(readOnly = true)
-public class HibernateSerializer implements ISerializer
+public class HibernateSerializer extends AbstractSerializer
 {
+	public HibernateSerializer(Object source,boolean useAggressiveProxying)
+	{
+		super(source);
+		this.useAggressiveProxying = useAggressiveProxying;
+	}
+	public HibernateSerializer(Object source)
+	{
+		this(source,false);
+	}
+
 	// private HashMap cache = new HashMap();
 	// private ArrayList alreadyTouched = new ArrayList();
 	@Resource
@@ -81,7 +91,11 @@ public class HibernateSerializer implements ISerializer
 	private SessionFactory sessionFactory;
 
 	private int pageSize = -1;
+	private int serializedHibernateProxyCount = 0;
 	
+	private boolean useAggressiveProxying;
+	
+
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
 		this.sessionFactory = sessionFactory;
@@ -93,89 +107,122 @@ public class HibernateSerializer implements ISerializer
 		return sessionFactory;
 	}
 
+
 	@Transactional
-	public Object translate(String sessionFactoryClazz, String getSessionMethod, Object obj)
+	@Override
+	/**
+	 * Serializes the source object.
+	 * This is the public entry point into serialization
+	 */
+	public Object serialize()
 	{
-		// Note - sessionFactoryClazz and getSessionMethod ignored in this serializer, as we use the sessionFactory from Spring
-		return translate(obj);
+		return serialize(getSource());
 	}
 
 
-	private Object translate(Object obj)
+	/**
+	 * Private serialization for members of getSource(). Called recursively
+	 * during serialization
+	 */
+	private Object serialize(Object source)
 	{
-		return translate(obj, false);
+		return serialize(source, false);
 	}
 
 
-	private Object translate(Object obj, boolean eagerlySerialize)
+	/**
+	 * Private serialization for members of getSource(). Called recursively
+	 * during serialization
+	 */
+
+	private Object serialize(Object objectToSerialize, boolean eagerlySerialize)
 	{
-		if (obj == null)
+		if (objectToSerialize == null)
 		{
 			return null;
 		}
 
 		Object result = null;
 
-		Object key = cache.getCacheKey(obj);
+		Object key = cache.getCacheKey(objectToSerialize);
 
 		if (cache.contains(key))
 		{
 			return cache.get(key);
 		}
-		result = writeBean(obj, key, eagerlySerialize);
+		result = writeBean(objectToSerialize, key, eagerlySerialize);
 
 		return result;
 	}
+
 
 	private boolean isLazyProxy(Object obj)
 	{
 		return obj instanceof HibernateProxy && (((HibernateProxy) obj).getHibernateLazyInitializer().isUninitialized());
 	}
-	private Object writeBean(Object source, Object key, boolean eagerlySerialize)
+
+
+	private Object writeBean(Object objectToSerialize, Object cacheKey, boolean eagerlySerialize)
 	{
 		Object result = null;
 
-		if (isLazyProxy(source) && !eagerlySerialize)
+		if (isLazyProxy(objectToSerialize) && !eagerlySerialize)
 		{
-			result = writeHibernateProxy((HibernateProxy) source, key);
-		} else if (source instanceof PersistentMap)
+			result = writeHibernateProxy((HibernateProxy) objectToSerialize, cacheKey);
+		} else if (shouldAggressivelyProxy(objectToSerialize, eagerlySerialize)) {
+			Object proxyKey = ((IHibernateProxy)objectToSerialize).getProxyKey();
+			result = generateDpHibernateProxy(objectToSerialize,proxyKey,cacheKey);
+		}else if (objectToSerialize instanceof PersistentMap)
 		{
-			result = writePersistantMap(source, result, key);
-		} else if (source instanceof AbstractPersistentCollection)
+			result = writePersistantMap(objectToSerialize, result, cacheKey);
+		} else if (objectToSerialize instanceof AbstractPersistentCollection)
 		{
-			result = writeAbstractPersistentCollection(source, key, eagerlySerialize);
-		} else if (source.getClass().isArray())
+			result = writeAbstractPersistentCollection(objectToSerialize, cacheKey, eagerlySerialize);
+		} else if (objectToSerialize.getClass().isArray())
 		{
-			result = writeArray((Object[]) source, key);
-		} else if (source instanceof Collection)
+			result = writeArray((Object[]) objectToSerialize, cacheKey);
+		} else if (objectToSerialize instanceof Collection)
 		{
-			result = writeCollection(source, key);
-		} else if (source instanceof Map)
+			result = writeCollection(objectToSerialize, cacheKey);
+		} else if (objectToSerialize instanceof Map)
 		{
-			result = writeMap(source, key);
-		} else if (source instanceof IHibernateProxy)
+			result = writeMap(objectToSerialize, cacheKey);
+		} else if (objectToSerialize instanceof IHibernateProxy)
 		{
-			result = writeBean(source, result, key);
-		} else if (source instanceof Object && (!TypeHelper.isSimple(source)) && !(source instanceof ASObject))
+			result = writeBean(objectToSerialize, cacheKey);
+		} else if (objectToSerialize instanceof Object && (!TypeHelper.isSimple(objectToSerialize)) && !(objectToSerialize instanceof ASObject))
 		{
-			result = writeBean(source, result, key);
+			result = writeBean(objectToSerialize, cacheKey);
 		} else
 		{
-			cache.store(key, source);
-			result = source;
+			cache.store(cacheKey, objectToSerialize);
+			result = objectToSerialize;
 		}
 		return result;
 	}
 
 
-	private Object writeBean(Object obj, Object result, Object key)
+	private boolean shouldAggressivelyProxy(Object objectToSerialize, boolean eagerlySerialize)
+	{
+		if (eagerlySerialize) return false;
+		if (!useAggressiveProxying) return false;
+		return !sourceContainsProperty(objectToSerialize) && canBeProxied(objectToSerialize); 
+	}
+
+
+	private boolean canBeProxied(Object objectToSerialize)
+	{
+		return objectToSerialize instanceof IHibernateProxy && objectToSerialize != getSource();
+	}
+
+
+	private ASObject writeBean(Object obj, Object cacheKey)
 	{
 		String propName;
-
+		ASObject asObject = new ASObject();
 		try
 		{
-			ASObject asObject = new ASObject();
-			cache.store(key, asObject);
+			cache.store(cacheKey, asObject);
 
 			asObject.setType(getClassName(obj));
 			asObject.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
@@ -191,7 +238,7 @@ public class HibernateSerializer implements ISerializer
 				boolean isExplicitFetch = (readMethod.getAnnotation(NoLazyLoadOnSerialize.class) != null);
 				if (isExplicitFetch)
 					continue;
-				if (propName.equals("handler") || propName.equals("class") || propName.equals("hibernateLazyInitializer"))
+				if (propertyNameIsExcluded(propName))
 				{
 					continue;
 				}
@@ -204,7 +251,7 @@ public class HibernateSerializer implements ISerializer
 						continue;
 					}
 					boolean eagerlySerialize = (readMethod.getAnnotation(EagerlySerialize.class) != null);
-					Object newVal = translate(val,eagerlySerialize);
+					Object newVal = serialize(val, eagerlySerialize);
 					asObject.put(propName, newVal);
 				} catch (Exception ex)
 				{
@@ -216,12 +263,11 @@ public class HibernateSerializer implements ISerializer
 				Object primaryKey = ((IHibernateProxy) obj).getProxyKey();
 				asObject.put(HibernateProxyConstants.PKEY, primaryKey);
 			}
-			result = asObject;
 		} catch (Exception ex)
 		{
 			ex.printStackTrace();
 		}
-		return result;
+		return asObject;
 	}
 
 
@@ -239,9 +285,10 @@ public class HibernateSerializer implements ISerializer
 			Object collectionMemeberCacheKey = cache.getCacheKey(collectionMemeber);
 			if (getPageSize() != -1 && list.size() > getPageSize())
 			{
-				translatedCollectionMember = getPagedCollectionProxy(collectionMemeber,collectionMemeberCacheKey);
-			} else {
-				translatedCollectionMember = translate(collectionMemeber);
+				translatedCollectionMember = getPagedCollectionProxy(collectionMemeber, collectionMemeberCacheKey);
+			} else
+			{
+				translatedCollectionMember = serialize(collectionMemeber);
 			}
 			list.add(translatedCollectionMember);
 		}
@@ -255,10 +302,12 @@ public class HibernateSerializer implements ISerializer
 		if (isLazyProxy(collectionMemeber))
 		{
 			return writeHibernateProxy((HibernateProxy) collectionMemeber, cacheKey);
-		} else if (collectionMemeber instanceof IHibernateProxy) {
-			return generateDpHibernateProxy(collectionMemeber, ((IHibernateProxy)collectionMemeber).getProxyKey(), cacheKey);
-		} else { // Default... we can't provide a proxy for this item, so translate it.
-			return  translate(collectionMemeber);
+		} else if (collectionMemeber instanceof IHibernateProxy)
+		{
+			return generateDpHibernateProxy(collectionMemeber, ((IHibernateProxy) collectionMemeber).getProxyKey(), cacheKey);
+		} else
+		{ // Default... we can't provide a proxy for this item, so translate it.
+			return serialize(collectionMemeber);
 		}
 
 	}
@@ -270,21 +319,20 @@ public class HibernateSerializer implements ISerializer
 		ArrayList list = new ArrayList();
 		for (Object member : obj)
 		{
-			result = translate(member);
+			result = serialize(member);
 			list.add(result);
 		}
 		return list.toArray();
 	}
 
 
-	private Object writeMap(Object obj, Object key)
+	private ASObject writeMap(Object obj, Object key)
 	{
 		if (obj instanceof ASObject)
 		{
-			return obj;
+			return (ASObject) obj;
 		}
 
-		Object result;
 		ASObject asObj = new ASObject();
 		asObj.setType(getClassName(obj));
 
@@ -296,10 +344,9 @@ public class HibernateSerializer implements ISerializer
 		{
 			Object thisKey = keysItr.next();
 			Object o = ((Map) obj).get(thisKey);
-			asObj.put(thisKey, translate(o));
+			asObj.put(thisKey, serialize(o));
 		}
-		result = asObj;
-		return result;
+		return asObj;
 	}
 
 
@@ -312,7 +359,7 @@ public class HibernateSerializer implements ISerializer
 			// go load our Collection of dpHibernateProxy objects
 			List proxies = getCollectionProxies(collection);
 
-			proxies = (List) translate(proxies);
+			proxies = (List) serialize(proxies);
 			result = proxies;
 
 			cache.store(key, proxies);
@@ -331,7 +378,7 @@ public class HibernateSerializer implements ISerializer
 			while (itr.hasNext())
 			{
 				Object next = itr.next();
-				Object newObj = translate(next);
+				Object newObj = serialize(next);
 				obj = newObj;
 				items.add(newObj);
 			}
@@ -368,26 +415,15 @@ public class HibernateSerializer implements ISerializer
 	}
 
 
-	private Object writeHibernateProxy(HibernateProxy obj, Object key)
+	private ASObject writeHibernateProxy(HibernateProxy obj, Object key)
 	{
 		Object primaryKey = obj.getHibernateLazyInitializer().getIdentifier();
 		return generateDpHibernateProxy(obj, primaryKey, key);
-		/*
-		ASObject as = new ASObject();
-		as.setType(getClassName(obj));
-		as.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
-		as.put(HibernateProxyConstants.PKEY, hibProxy.getHibernateLazyInitializer().getIdentifier());
-		as.put(HibernateProxyConstants.PROXYINITIALIZED, false);// !hibProxy.getHibernateLazyInitializer().isUninitialized());
-
-		cache.store(key, as);
-		result = as;
-		return result;
-		*/
 	}
-	private Object generateDpHibernateProxy(Object obj, Object objectIdentifier, Object cacheKey)
-	{
-		Object result;
 
+
+	private ASObject generateDpHibernateProxy(Object obj, Object objectIdentifier, Object cacheKey)
+	{
 		ASObject as = new ASObject();
 		as.setType(getClassName(obj));
 		as.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
@@ -395,9 +431,7 @@ public class HibernateSerializer implements ISerializer
 		as.put(HibernateProxyConstants.PROXYINITIALIZED, false);// !hibProxy.getHibernateLazyInitializer().isUninitialized());
 
 		cache.store(cacheKey, as);
-		result = as;
-		return result;
-
+		return as;
 	}
 
 
@@ -532,6 +566,60 @@ public class HibernateSerializer implements ISerializer
 	}
 
 
+	boolean sourceContainsProperty(Object member)
+	{
+		for (Object propertyValue : getSourcePropertyValues())
+		{
+			if (propertyValue == member)
+				return true;
+		}
+		return false;
+	}
+	private List<Object> sourcePropertyValues;
+	private List<Object> getSourcePropertyValues()
+	{
+		if (sourcePropertyValues==null)
+		{
+			sourcePropertyValues = getPropertyValues(getSource());
+		}
+		return sourcePropertyValues;
+	}
+	private List<Object> getPropertyValues(Object member)
+	{
+		List<Object> result = new ArrayList<Object>();
+		BeanInfo info;
+		try
+		{
+			info = Introspector.getBeanInfo(member.getClass());
+
+			for (PropertyDescriptor pd : info.getPropertyDescriptors())
+			{
+				String propName = pd.getName();
+				Method readMethod = pd.getReadMethod();
+				if (readMethod == null)
+					continue;
+				if (propertyNameIsExcluded(propName))
+				{
+					continue;
+				}
+				Object val = readMethod.invoke(member, null);
+				if (val != null)
+					result.add(val);
+			}
+		} catch (Exception e)
+		{
+			throw new RuntimeException(e);
+		}
+		return result;
+	}
+
+
+	private boolean propertyNameIsExcluded(String propName)
+	{
+		return propName.equals("handler") || propName.equals("class") || propName.equals("hibernateLazyInitializer");
+	}
+
+
 	public void setCache(DPHibernateCache cache)
 	{
 		this.cache = cache;
@@ -553,5 +641,17 @@ public class HibernateSerializer implements ISerializer
 	public int getPageSize()
 	{
 		return pageSize;
+	}
+
+
+	public void setUseAggressiveProxying(boolean useAggressiveProxying)
+	{
+		this.useAggressiveProxying = useAggressiveProxying;
+	}
+
+
+	public boolean isUsingAggressiveProxying()
+	{
+		return useAggressiveProxying;
 	}
 }

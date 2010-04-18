@@ -147,6 +147,11 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		}
 		if (entity == null)
 		{
+			if (changeMessage.getIsDeleted())
+			{
+				// Let's not stress too much if we can't find the entity -- we were gonna kill it anyway...
+				return result;
+			}
 			throw new IllegalArgumentException("No entity found or created");
 		}
 		if (changeMessage.getIsDeleted())

@@ -25,5 +25,5 @@ package net.digitalprimates.persistence.translators;
  */
 public interface ISerializer 
 {
-	Object translate(String sessionFactoryClazz, String getSessionMethod, Object obj);
+	Object serialize();
 }

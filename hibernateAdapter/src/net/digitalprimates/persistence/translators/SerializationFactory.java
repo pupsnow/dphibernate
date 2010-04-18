@@ -14,13 +14,14 @@
 	
 	@author: Mike Nimer
 	@ignore
-**/
+ **/
 
 package net.digitalprimates.persistence.translators;
 
 import javax.servlet.ServletContext;
 
 import net.digitalprimates.persistence.translators.hibernate.HibernateDeserializer;
+import net.digitalprimates.persistence.translators.hibernate.HibernateSerializer;
 
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -28,39 +29,31 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import flex.messaging.FlexContext;
 
 /**
- * Factory to return the right serializer/deserializer for the requests. 
+ * Factory to return the right serializer/deserializer for the requests.
+ * 
  * @author mike nimer
  */
-public class SerializationFactory 
+public class SerializationFactory
 {
-	public final static String HIBERNATESERIALIZER = "HIBERNATE";
-	
-	public static ISerializer getSerializer(String type)
+	public static ISerializer getSerializer(Object source)
 	{
-		if( HIBERNATESERIALIZER.equals(type) )
+		return getSerializer(source,false);
+	}
+	public static ISerializer getSerializer(Object source,boolean useAggressiveSerialization)
+	{
+		ServletContext ctx = FlexContext.getServletContext();
+		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
+		ISerializer serializer = (ISerializer) springContext.getBean("hibernateSerializerBean",new Object[]{source,useAggressiveSerialization});
+		if (serializer == null)
 		{
-			ServletContext ctx = FlexContext.getServletContext();
-			WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
-			ISerializer serializer = (ISerializer) springContext.getBean("hibernateSerializerBean");
-			if (serializer == null)
-			{
-				throw new RuntimeException("bean named hibernateSerializerBean not found");
-			}
-			return serializer;
+			throw new RuntimeException("bean named hibernateSerializerBean not found");
 		}
+		return serializer;
+	}
 
-		throw new RuntimeException("unsupport serialization type: " +type);
-	}
-	
-	
-	public static IDeserializer getDeserializer(String type)
+
+	public static IDeserializer getDeserializer()
 	{
-		if( HIBERNATESERIALIZER.equals(type) )
-		{
-			return new HibernateDeserializer();
-		}
-		
-		throw new RuntimeException("unsupport deSerialization type: " +type);
+		return new HibernateDeserializer();
 	}
-	
 }

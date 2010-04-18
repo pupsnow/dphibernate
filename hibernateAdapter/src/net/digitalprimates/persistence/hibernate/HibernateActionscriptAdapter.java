@@ -14,8 +14,9 @@ public class HibernateActionscriptAdapter extends ActionScriptAdapter
      */
     public Object invoke(Message message)
     {
-        ISerializer serializer = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER);
-        Object translatedBody = serializer.translate(null, null, message.getBody());
+        ISerializer serializer = SerializationFactory.getSerializer(message.getBody(),true);
+        
+        Object translatedBody = serializer.serialize();
         message.setBody(translatedBody);
         return super.invoke(message);
     }
