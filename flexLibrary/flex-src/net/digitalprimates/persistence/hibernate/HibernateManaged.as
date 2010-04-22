@@ -168,7 +168,7 @@ package net.digitalprimates.persistence.hibernate
                 }
             }
         }
-private static function manageArrayCollection(collection:ArrayCollection,ro:IHibernateRPC):void
+public static function manageArrayCollection(collection:ArrayCollection,ro:IHibernateRPC):void
 {
 	var isPagedCollection : Boolean = false;
 	for (var i:int = 0; i < collection.length; i++)
