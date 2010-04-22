@@ -22,6 +22,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
@@ -37,6 +38,7 @@ import java.util.UUID;
 
 import javax.annotation.Resource;
 
+import net.digitalprimates.persistence.annotations.AggressivelyProxy;
 import net.digitalprimates.persistence.annotations.EagerlySerialize;
 import net.digitalprimates.persistence.annotations.NeverSerialize;
 import net.digitalprimates.persistence.annotations.NoLazyLoadOnSerialize;
@@ -44,6 +46,7 @@ import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 import net.digitalprimates.persistence.translators.AbstractSerializer;
 
+import org.apache.commons.lang.ClassUtils;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.hibernate.collection.AbstractPersistentCollection;
@@ -81,7 +84,12 @@ public class HibernateSerializer extends AbstractSerializer
 	{
 		this(source,false);
 	}
-
+	public HibernateSerializer(Object source,boolean useAggressiveProxying,DPHibernateCache cache,SessionFactory sessionFactory)
+	{
+		this (source,useAggressiveProxying);
+		this.cache = cache;
+		this.sessionFactory = sessionFactory;
+	}
 	// private HashMap cache = new HashMap();
 	// private ArrayList alreadyTouched = new ArrayList();
 	@Resource
@@ -91,10 +99,9 @@ public class HibernateSerializer extends AbstractSerializer
 	private SessionFactory sessionFactory;
 
 	private int pageSize = -1;
-	private int serializedHibernateProxyCount = 0;
 	
 	private boolean useAggressiveProxying;
-	
+	private boolean permitAgressiveProxyingOnRoot;
 
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
@@ -205,14 +212,32 @@ public class HibernateSerializer extends AbstractSerializer
 	private boolean shouldAggressivelyProxy(Object objectToSerialize, boolean eagerlySerialize)
 	{
 		if (eagerlySerialize) return false;
+		if (hasAnnotation(objectToSerialize,AggressivelyProxy.class))
+			return true;
 		if (!useAggressiveProxying) return false;
-		return !sourceContainsProperty(objectToSerialize) && canBeProxied(objectToSerialize); 
+		return !sourceContainsProperty(objectToSerialize) && canBeAgressivelyProxied(objectToSerialize); 
 	}
 
 
-	private boolean canBeProxied(Object objectToSerialize)
+	private boolean hasAnnotation(Object objectToSerialize, Class<? extends Annotation> annotation)
 	{
-		return objectToSerialize instanceof IHibernateProxy && objectToSerialize != getSource();
+		return Object.class.getAnnotation(annotation) != null;
+	}
+	private boolean canBeAgressivelyProxied(Object objectToSerialize)
+	{
+		if (!(objectToSerialize instanceof IHibernateProxy))
+			return false;
+		
+		if (isRootObject(objectToSerialize))
+		{
+			return permitAgressiveProxyingOnRoot;
+		}
+		
+		return true;
+	}
+	private boolean isRootObject(Object objectToSerialize)
+	{
+		return objectToSerialize == getSource();
 	}
 
 
@@ -235,8 +260,8 @@ public class HibernateSerializer extends AbstractSerializer
 				Method readMethod = pd.getReadMethod();
 				if (readMethod == null)
 					continue;
-				boolean isExplicitFetch = (readMethod.getAnnotation(NoLazyLoadOnSerialize.class) != null);
-				if (isExplicitFetch)
+				boolean explicitlyFetch = methodHasAnnotation(readMethod,NoLazyLoadOnSerialize.class);
+				if (explicitlyFetch)
 					continue;
 				if (propertyNameIsExcluded(propName))
 				{
@@ -250,9 +275,17 @@ public class HibernateSerializer extends AbstractSerializer
 					{
 						continue;
 					}
-					boolean eagerlySerialize = (readMethod.getAnnotation(EagerlySerialize.class) != null);
-					Object newVal = serialize(val, eagerlySerialize);
-					asObject.put(propName, newVal);
+					Object serializedValue;
+					if (methodHasAnnotation(readMethod, AggressivelyProxy.class))
+					{
+						HibernateSerializer aggressiveSerializer = new HibernateSerializer(val,true,cache,sessionFactory);
+						aggressiveSerializer.permitAgressiveProxyingOnRoot = true;
+						serializedValue = aggressiveSerializer.serialize();
+					} else {
+						boolean eagerlySerialize = methodHasAnnotation(readMethod, EagerlySerialize.class);
+						serializedValue = serialize(val, eagerlySerialize);
+					}
+					asObject.put(propName, serializedValue);
 				} catch (Exception ex)
 				{
 					ex.printStackTrace();
@@ -268,6 +301,10 @@ public class HibernateSerializer extends AbstractSerializer
 			ex.printStackTrace();
 		}
 		return asObject;
+	}
+	private boolean methodHasAnnotation(Method readMethod,Class<? extends Annotation> annotation)
+	{
+		return readMethod.getAnnotation(annotation) != null;
 	}
 
 
