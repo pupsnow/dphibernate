@@ -29,17 +29,18 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 import flex.messaging.FlexContext;
 
 /**
- * Factory to return the right serializer/deserializer for the requests.
+ * Returns a serializer / deserializer from a Spring context.
  * 
- * @author mike nimer
  */
-public class SerializationFactory
+public class SpringContextSerializerFactory implements ISerializerFactory
 {
-	public static ISerializer getSerializer(Object source)
+	@Override
+	public ISerializer getSerializer(Object source)
 	{
 		return getSerializer(source,false);
 	}
-	public static ISerializer getSerializer(Object source,boolean useAggressiveSerialization)
+	@Override
+	public ISerializer getSerializer(Object source,boolean useAggressiveSerialization)
 	{
 		ServletContext ctx = FlexContext.getServletContext();
 		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
@@ -51,8 +52,8 @@ public class SerializationFactory
 		return serializer;
 	}
 
-
-	public static IDeserializer getDeserializer()
+	@Override
+	public IDeserializer getDeserializer()
 	{
 		return new HibernateDeserializer();
 	}

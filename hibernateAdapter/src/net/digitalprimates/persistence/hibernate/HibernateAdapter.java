@@ -22,11 +22,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import net.digitalprimates.persistence.translators.ISerializerFactory;
 import net.digitalprimates.persistence.translators.ISerializer;
-import net.digitalprimates.persistence.translators.SerializationFactory;
-
+import net.digitalprimates.persistence.translators.SimpleSerializationFactory;
 import flex.messaging.Destination;
-import flex.messaging.FlexContext;
 import flex.messaging.config.ConfigMap;
 import flex.messaging.messages.Message;
 import flex.messaging.messages.RemotingMessage;
@@ -38,12 +37,17 @@ public class HibernateAdapter extends JavaAdapter
 	// private String scope = "request";
 	protected Destination destination;
 
-	private String default_loadMethod = "loadBean";
-	private String default_saveMethod = "saveBean";
+	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
+	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
 	private String loadMethodName;
 	private String saveMethodName;
 	private ArrayList<DPHibernateOperation> operations;
+	private ISerializerFactory serializerFactory;
 
+	public HibernateAdapter()
+	{
+		super();
+	}
 
 	/**
 	 * Initialize the adapter properties from the flex services-config.xml file
@@ -54,40 +58,30 @@ public class HibernateAdapter extends JavaAdapter
 		if (properties == null || properties.size() == 0)
 			return;
 
-		ConfigMap adapterProps = properties.getPropertyAsMap("adapterConfig", new ConfigMap());
-		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-
+		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
+		initalizeSerializerFactory(dpHibernateProps);
 		operations = new ArrayList<DPHibernateOperation>();
-		loadMethodName = getLoadMethodName(destProps, adapterProps);
-		setSaveMethodName(getSaveMethodName(destProps, adapterProps));
+		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", DEFAULT_LOAD_METHOD_NAME);
+		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", DEFAULT_SAVE_METHOD_NAME);
 		operations.add(new LoadDPProxyOperation(loadMethodName));
 		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
 	}
 	
 
-	private String getSaveMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps)
+	private void initalizeSerializerFactory(ConfigMap adapterProps)
 	{
-		return getConfigProperty(destProps, adapterHibernateProps, "saveMethod", default_saveMethod);
+		String serializationFactoryClassName = adapterProps.getPropertyAsString("serializerFactory", SimpleSerializationFactory.class.getCanonicalName());
+		Class<ISerializerFactory> serializationFactoryClass;
+		try
+		{
+			serializationFactoryClass = (Class<ISerializerFactory>) Class.forName(serializationFactoryClassName);
+			serializerFactory = serializationFactoryClass.newInstance();
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
-
-
-	private String getLoadMethodName(ConfigMap destProps, ConfigMap adapterHibernateProps)
-	{
-		return getConfigProperty(destProps, adapterHibernateProps, "loadMethod", default_loadMethod);
-	}
-
-
-	private String getConfigProperty(ConfigMap destProps, ConfigMap adapterHibernateProps, String propertyName, String defaultValue)
-	{
-		String result;
-		result = destProps.getPropertyAsString(propertyName, null);
-		if (result != null)
-			return result;
-
-		result = adapterHibernateProps.getPropertyAsString(propertyName, null);
-		return (result != null) ? result : defaultValue;
-	}
-
 
 	public Object superInvoke(Message message)
 	{
@@ -138,7 +132,7 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-					Object o = SerializationFactory.getDeserializer().translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
+					Object o = serializerFactory.getDeserializer().translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
 					remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " + (e1 - s1));
@@ -164,7 +158,7 @@ public class HibernateAdapter extends JavaAdapter
 			try
 			{
 				long s3 = new Date().getTime();
-				ISerializer serializer = SerializationFactory.getSerializer(results);
+				ISerializer serializer = serializerFactory.getSerializer(results);
 				results = serializer.serialize();
 				long e3 = new Date().getTime();
 				System.out.println("{serialize} " + (e3 - s3));
