@@ -1,6 +1,6 @@
 package net.digitalprimates.persistence.translators.hibernate;
 
-import java.io.Serializable;
+import java.util.Date;
 
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
@@ -13,7 +13,12 @@ public class EntityCacheKey {
 	{
 		this.entity = entity;
 		this.entityClass = entity.getClass();
-		this.id = entity.getProxyKey();
+		if (entity.getProxyKey() == null)
+		{
+			this.id = new Date().getTime();
+		} else {
+			this.id = entity.getProxyKey();
+		}
 	}
 	@Override
 	public boolean equals(Object val)

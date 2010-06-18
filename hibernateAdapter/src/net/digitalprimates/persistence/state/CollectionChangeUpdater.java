@@ -80,6 +80,9 @@ public class CollectionChangeUpdater extends PropertyChangeUpdater {
 		if (sourceCollection==null) return;
 		for (Object sourceCollectionMember : sourceCollection)
 		{
+			if (sourceCollectionMember == null)
+				continue;
+			
 			if (!getCollectionChangeMessage().containsProxyForEntity((IHibernateProxy) sourceCollectionMember))
 			{
 				membersToRemove.add(sourceCollectionMember);

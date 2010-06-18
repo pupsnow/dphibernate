@@ -60,19 +60,9 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 
 	@SuppressWarnings("unchecked")
-	@Transactional(readOnly = false)
 	public Set<ObjectChangeResult> update(ObjectChangeMessage changeMessage)
 	{
-		try
-		{
-			applyPreProcessors(changeMessage);
-		} catch (ObjectChangeAbortedException e)
-		{
-			// TODO : Handle this - the change was not permitted
-			throw new RuntimeException(e);
-		}
 		Set<ObjectChangeResult> result = processUpdate(changeMessage);
-		applyPostProcessors(changeMessage);
 		return result;
 	}
 
@@ -217,28 +207,42 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		// For debugging:
 		// XStream xStream = new XStream();
 		// System.out.println(xStream.toXML(changeMessages));
-
+		
+		List<ObjectChangeMessage> changeMessagesToProcess = new ArrayList<ObjectChangeMessage>(changeMessages);
+		applyPreProcessors(changeMessages);
+		
 		// Update new items first
-		List<ObjectChangeMessage> newObjects = filter(havingValue(on(ObjectChangeMessage.class).getIsNew(), is(true)), changeMessages);
+		List<ObjectChangeMessage> newObjects = filter(havingValue(on(ObjectChangeMessage.class).getIsNew(), is(true)), changeMessagesToProcess);
 		UpdateDependencyResolver dependencyResolver = new UpdateDependencyResolver();
 		dependencyResolver.addMessages(newObjects);
 		List<ObjectChangeMessage> newMessagesOrderedByDependency = dependencyResolver.getOrderedList();
 		Set<ObjectChangeResult> result = doUpdate(newMessagesOrderedByDependency);
 
-		changeMessages.removeAll(newObjects);
-		result.addAll(doUpdate(changeMessages));
-		/*
-		try
-		{
-			sessionFactory.getCurrentSession().getTransaction().commit();
-		} catch (TransactionException e)
-		{
-			// Perhaps it had already been committed..
-			System.out.print(e);
-		}
-		*/
+		changeMessagesToProcess.removeAll(newObjects);
+		result.addAll(doUpdate(changeMessagesToProcess));
+		
+		applyPostProcessors(changeMessages);
 		return result;
 	}
+
+
+	private void applyPreProcessors(List<ObjectChangeMessage> changeMessages) throws ObjectChangeAbortedException
+	{
+		for (ObjectChangeMessage changeMessage:changeMessages)
+		{
+			applyPreProcessors(changeMessage);
+		}
+	}
+
+
+	private void applyPostProcessors(List<ObjectChangeMessage> changeMessages)
+	{
+		for (ObjectChangeMessage changeMessage : changeMessages)
+		{
+			applyPostProcessors(changeMessage);
+		}
+	}
+	
 
 
 	private Set<ObjectChangeResult> doUpdate(List<ObjectChangeMessage> changeMessages)
@@ -248,6 +252,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		{
 			result.addAll(update(message));
 		}
+		
 		return result;
 	}
 

@@ -1,6 +1,7 @@
 package net.digitalprimates.persistence.state;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +36,24 @@ public class UpdateDependencyResolver {
 			{
 				dependencies.add((IHibernateProxyDescriptor) propertyChangeMessage.getNewValue());
 			}
+			/*
+			if (propertyChangeMessage instanceof CollectionChangeMessage)
+			{
+				dependencies.addAll(parseCollectionChangeMessage(((CollectionChangeMessage)propertyChangeMessage)));
+			}
+			*/
 		}
 		getMessageProxyDependencies().put(objectChangeMessage.getOwner(), dependencies);
+	}
+
+	private Collection<? extends IHibernateProxyDescriptor> parseCollectionChangeMessage(CollectionChangeMessage collectionChangeMessage)
+	{
+		Collection<IHibernateProxyDescriptor> dependencies = new ArrayList<IHibernateProxyDescriptor>();
+		for (ObjectChangeMessage objectChangeMessage : collectionChangeMessage.getCollectionMembers())
+		{
+			dependencies.add(objectChangeMessage.getOwner());
+		}
+		return dependencies;
 	}
 
 	public List<ObjectChangeMessage> getOrderedList() {

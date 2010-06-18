@@ -1,6 +1,6 @@
 package net.digitalprimates.persistence.state;
 
-public class ObjectChangeAbortedException extends Exception
+public class ObjectChangeAbortedException extends RuntimeException
 {
 
 }
