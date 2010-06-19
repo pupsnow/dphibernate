@@ -18,11 +18,13 @@
 
 package net.digitalprimates.persistence.translators;
 
+import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 
 import net.digitalprimates.persistence.translators.hibernate.HibernateDeserializer;
 import net.digitalprimates.persistence.translators.hibernate.HibernateSerializer;
 
+import org.hibernate.SessionFactory;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -34,6 +36,9 @@ import flex.messaging.FlexContext;
  */
 public class SpringContextSerializerFactory implements ISerializerFactory
 {
+	@Resource
+	private SessionFactory sessionFactory;
+	
 	@Override
 	public ISerializer getSerializer(Object source)
 	{
@@ -56,5 +61,14 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	public IDeserializer getDeserializer()
 	{
 		return new HibernateDeserializer();
+	}
+	public void setSessionFactory(SessionFactory sessionFactory)
+	{
+		this.sessionFactory = sessionFactory;
+	}
+	@Override
+	public SessionFactory getSessionFactory()
+	{
+		return sessionFactory;
 	}
 }

@@ -1,14 +1,16 @@
 package net.digitalprimates.persistence.translators;
 
-import org.hibernate.SessionFactory;
-
-import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
 import net.digitalprimates.persistence.translators.hibernate.DPHibernateCache;
 import net.digitalprimates.persistence.translators.hibernate.HibernateDeserializer;
 import net.digitalprimates.persistence.translators.hibernate.HibernateSerializer;
 
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
 public class SimpleSerializationFactory implements ISerializerFactory
 {
+	protected SessionFactory sessionFactory;
+
 
 	@Override
 	public IDeserializer getDeserializer()
@@ -29,13 +31,34 @@ public class SimpleSerializationFactory implements ISerializerFactory
 	{
 		DPHibernateCache cache = new DPHibernateCache();
 		SessionFactory sessionFactory = getSessionFactory();
-		HibernateSerializer hibernateSerializer = new HibernateSerializer(source,useAggressiveSerialization,cache,sessionFactory);
+		HibernateSerializer hibernateSerializer = new HibernateSerializer(source, useAggressiveSerialization, cache, sessionFactory);
 		return hibernateSerializer;
 	}
-	
-	protected SessionFactory getSessionFactory()
+
+
+	@Override
+	public SessionFactory getSessionFactory()
 	{
-		return HibernateUtil.getSessionFactory();
+		if (sessionFactory == null)
+		{
+			initalizeSessionFactory();
+		}
+		return sessionFactory;
+	}
+
+
+	protected void initalizeSessionFactory()
+	{
+		try
+		{
+			// Create the SessionFactory
+			sessionFactory = new Configuration().configure().buildSessionFactory();
+		} catch (Throwable ex)
+		{
+			// Make sure you log the exception, as it might be swallowed
+			System.err.println("Initial SessionFactory creation failed." + ex);
+			throw new ExceptionInInitializerError(ex);
+		}
 	}
 
 }

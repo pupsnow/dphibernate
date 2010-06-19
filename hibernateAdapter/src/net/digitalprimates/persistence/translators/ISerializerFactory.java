@@ -1,14 +1,13 @@
 package net.digitalprimates.persistence.translators;
 
+import org.hibernate.SessionFactory;
+
 public interface ISerializerFactory
 {
 
-	public abstract ISerializer getSerializer(Object source);
-
-
-	public abstract ISerializer getSerializer(Object source, boolean useAggressiveSerialization);
-
-
-	public abstract IDeserializer getDeserializer();
-
+	public ISerializer getSerializer(Object source);
+	public ISerializer getSerializer(Object source, boolean useAggressiveSerialization);
+	public IDeserializer getDeserializer();
+	
+	public SessionFactory getSessionFactory();
 }

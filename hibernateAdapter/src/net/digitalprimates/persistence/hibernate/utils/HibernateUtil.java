@@ -20,12 +20,12 @@ package net.digitalprimates.persistence.hibernate.utils;
 
 import java.sql.SQLException;
 
+import net.digitalprimates.persistence.translators.ISerializerFactory;
+
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.AnnotationConfiguration;
-import org.hibernate.cfg.Configuration;
 
 /**
  * A utility class to help you manage your Hibernate sessions
@@ -36,62 +36,19 @@ import org.hibernate.cfg.Configuration;
 public class HibernateUtil
 {
 
-    private static SessionFactory sessionFactory;
+//    private static SessionFactory sessionFactory;
+	
+	private static ISerializerFactory serializerFactory;
 
     public static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 
     public static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
 
-    private static void initalizeSessionFactory()
-    {
-        try
-        {
-            // Create the SessionFactory
-            sessionFactory = new Configuration().configure().buildSessionFactory();
-        }
-        catch (Throwable ex)
-        {
-            // Make sure you log the exception, as it might be swallowed
-            System.err.println("Initial SessionFactory creation failed." + ex);
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
-
-
     public static SessionFactory getSessionFactory() throws HibernateException
     {
-    	if (sessionFactory == null)
-    	{
-    		initalizeSessionFactory();
-    	}
-    	return sessionFactory;
-    }
-    public static SessionFactory getSessionFactoryForAnnotations() throws HibernateException
-    {
-    	if (sessionFactory == null)
-    	{
-    		initalizeSessionFactoryForAnnotations();
-    	}
-    	return sessionFactory;
+    	return serializerFactory.getSessionFactory();
     }
     
-    private static void initalizeSessionFactoryForAnnotations()
-	{
-    	try
-        {
-            // Create the SessionFactory
-    		sessionFactory = new AnnotationConfiguration().configure().buildSessionFactory();
-        }
-        catch (Throwable ex)
-        {
-            // Make sure you log the exception, as it might be swallowed
-            System.err.println("Initial SessionFactory creation failed." + ex);
-            throw new ExceptionInInitializerError(ex);
-        }
-		
-	}
-
-
 	public static Session getCurrentSession() throws HibernateException
     {
     	return getCurrentSession(false);
@@ -187,4 +144,16 @@ public class HibernateUtil
         }
 
     }
+
+
+	public static void setSerializerFactory(ISerializerFactory serializerFactory)
+	{
+		HibernateUtil.serializerFactory = serializerFactory;
+	}
+
+
+	public static ISerializerFactory getSerializerFactory()
+	{
+		return serializerFactory;
+	}
 }

@@ -22,9 +22,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import net.digitalprimates.persistence.translators.ISerializerFactory;
+import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
 import net.digitalprimates.persistence.translators.ISerializer;
+import net.digitalprimates.persistence.translators.ISerializerFactory;
 import net.digitalprimates.persistence.translators.SimpleSerializationFactory;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import flex.messaging.Destination;
 import flex.messaging.config.ConfigMap;
 import flex.messaging.messages.Message;
@@ -34,11 +39,13 @@ import flex.messaging.services.remoting.adapters.JavaAdapter;
 @SuppressWarnings("unchecked")
 public class HibernateAdapter extends JavaAdapter
 {
-	// private String scope = "request";
+	private static final Log log = LogFactory.getLog(HibernateAdapter.class);
+	
 	protected Destination destination;
 
 	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
 	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
+	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
 	private String loadMethodName;
 	private String saveMethodName;
 	private ArrayList<DPHibernateOperation> operations;
@@ -60,22 +67,60 @@ public class HibernateAdapter extends JavaAdapter
 
 		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
 		initalizeSerializerFactory(dpHibernateProps);
-		operations = new ArrayList<DPHibernateOperation>();
-		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", DEFAULT_LOAD_METHOD_NAME);
-		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", DEFAULT_SAVE_METHOD_NAME);
+		initalizeOperations();
+		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
+		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
 		operations.add(new LoadDPProxyOperation(loadMethodName));
 		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
+		
+		logConfiguration();
 	}
 	
 
+	private void initalizeOperations()
+	{
+		if (operations == null)
+		{
+			operations = new ArrayList<DPHibernateOperation>();
+		}
+	}
+
+	private String getDefaultSaveMethodName()
+	{
+		return (saveMethodName != null) ? saveMethodName : DEFAULT_SAVE_METHOD_NAME; 
+	}
+
+	private String getDefaultLoadMethodName()
+	{
+		return (loadMethodName != null) ? loadMethodName : DEFAULT_LOAD_METHOD_NAME;
+	}
+
+	private void logConfiguration()
+	{
+		log.debug("dpHibernate loadMethodName: " + loadMethodName);
+		log.debug("dpHibernate saveMethodName: " + saveMethodName);
+		log.debug("dpHibernate serializerFactory: " + serializerFactory.getClass().getCanonicalName());
+	}
+
 	private void initalizeSerializerFactory(ConfigMap adapterProps)
 	{
-		String serializationFactoryClassName = adapterProps.getPropertyAsString("serializerFactory", SimpleSerializationFactory.class.getCanonicalName());
+		String serializationFactoryClassName = adapterProps.getPropertyAsString("serializerFactory", null);
+		if (serializerFactory != null && serializationFactoryClassName == null)
+		{
+			// The configuration did not specify an overriding SerializerFactory, and
+			// we already have one configured, so exit now.
+			return;
+		}
+		if (serializationFactoryClassName == null)
+		{
+			serializationFactoryClassName = DEFAULT_SERIALZIER_FACTORY_CLASSNAME;
+		}
 		Class<ISerializerFactory> serializationFactoryClass;
 		try
 		{
 			serializationFactoryClass = (Class<ISerializerFactory>) Class.forName(serializationFactoryClassName);
 			serializerFactory = serializationFactoryClass.newInstance();
+			HibernateUtil.setSerializerFactory(serializerFactory);
 		} catch (Exception e)
 		{
 			e.printStackTrace();

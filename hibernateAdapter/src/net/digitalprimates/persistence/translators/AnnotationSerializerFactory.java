@@ -1,22 +1,30 @@
 package net.digitalprimates.persistence.translators;
 
-import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
-
-import org.hibernate.SessionFactory;
+import org.hibernate.cfg.AnnotationConfiguration;
 
 /**
- * Serializer factory which is configured for use with Hibernate Annotations / JPA.
+ * Serializer factory which is configured for use with Hibernate Annotations /
+ * JPA.
+ * 
  * @author owner
- *
+ * 
  */
 public class AnnotationSerializerFactory extends SimpleSerializationFactory
 {
-
 	@Override
-	protected SessionFactory getSessionFactory()
+	protected void initalizeSessionFactory()
 	{
-		return HibernateUtil.getSessionFactory();
-	}
+		try
+		{
+			// Create the SessionFactory
+			sessionFactory = new AnnotationConfiguration().configure().buildSessionFactory();
+		} catch (Throwable ex)
+		{
+			// Make sure you log the exception, as it might be swallowed
+			System.err.println("Initial SessionFactory creation failed." + ex);
+			throw new ExceptionInInitializerError(ex);
+		}
 
+	}
 
 }
