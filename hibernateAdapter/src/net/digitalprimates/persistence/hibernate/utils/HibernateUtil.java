@@ -39,7 +39,6 @@ public class HibernateUtil
 //    private static SessionFactory sessionFactory;
 	
 	private static ISerializerFactory serializerFactory;
-
     public static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 
     public static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
@@ -48,7 +47,6 @@ public class HibernateUtil
     {
     	return serializerFactory.getSessionFactory();
     }
-    
 	public static Session getCurrentSession() throws HibernateException
     {
     	return getCurrentSession(false);
@@ -144,7 +142,6 @@ public class HibernateUtil
         }
 
     }
-
 
 	public static void setSerializerFactory(ISerializerFactory serializerFactory)
 	{

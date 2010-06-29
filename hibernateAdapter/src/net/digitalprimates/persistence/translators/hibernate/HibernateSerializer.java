@@ -19,11 +19,10 @@
 package net.digitalprimates.persistence.translators.hibernate;
 
 import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,15 +45,18 @@ import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 import net.digitalprimates.persistence.translators.AbstractSerializer;
 
-import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.collection.AbstractPersistentCollection;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentMap;
-import org.hibernate.engine.SessionImplementor;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.MySQL5Dialect;
 import org.hibernate.event.EventSource;
-import org.hibernate.impl.SessionImpl;
+import org.hibernate.impl.SessionFactoryImpl;
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.proxy.HibernateProxy;
@@ -75,21 +77,30 @@ import flex.messaging.io.amf.ASObject;
 @Transactional(readOnly = true)
 public class HibernateSerializer extends AbstractSerializer
 {
-	public HibernateSerializer(Object source,boolean useAggressiveProxying)
+	private static final Log log = LogFactory.getLog(HibernateSerializer.class);
+	private static Dialect dialect;
+
+
+	public HibernateSerializer(Object source, boolean useAggressiveProxying)
 	{
 		super(source);
 		this.useAggressiveProxying = useAggressiveProxying;
 	}
+
+
 	public HibernateSerializer(Object source)
 	{
-		this(source,false);
+		this(source, false);
 	}
-	public HibernateSerializer(Object source,boolean useAggressiveProxying,DPHibernateCache cache,SessionFactory sessionFactory)
+
+
+	public HibernateSerializer(Object source, boolean useAggressiveProxying, DPHibernateCache cache, SessionFactory sessionFactory)
 	{
-		this (source,useAggressiveProxying);
+		this(source, useAggressiveProxying);
 		this.cache = cache;
 		this.sessionFactory = sessionFactory;
 	}
+
 	// private HashMap cache = new HashMap();
 	// private ArrayList alreadyTouched = new ArrayList();
 	@Resource
@@ -99,9 +110,10 @@ public class HibernateSerializer extends AbstractSerializer
 	private SessionFactory sessionFactory;
 
 	private int pageSize = -1;
-	
+
 	private boolean useAggressiveProxying;
 	private boolean permitAgressiveProxyingOnRoot;
+
 
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
@@ -176,21 +188,22 @@ public class HibernateSerializer extends AbstractSerializer
 		if (isLazyProxy(objectToSerialize) && !eagerlySerialize)
 		{
 			result = writeHibernateProxy((HibernateProxy) objectToSerialize, cacheKey);
-		} else if (shouldAggressivelyProxy(objectToSerialize, eagerlySerialize)) {
-			Object proxyKey = ((IHibernateProxy)objectToSerialize).getProxyKey();
-			result = generateDpHibernateProxy(objectToSerialize,proxyKey,cacheKey);
-		}else if (objectToSerialize instanceof PersistentMap)
+		} else if (shouldAggressivelyProxy(objectToSerialize, eagerlySerialize))
+		{
+			Object proxyKey = ((IHibernateProxy) objectToSerialize).getProxyKey();
+			result = generateDpHibernateProxy(objectToSerialize, proxyKey, cacheKey);
+		} else if (objectToSerialize instanceof PersistentMap)
 		{
 			result = writePersistantMap(objectToSerialize, result, cacheKey);
 		} else if (objectToSerialize instanceof AbstractPersistentCollection)
 		{
-			result = writeAbstractPersistentCollection(objectToSerialize, cacheKey, eagerlySerialize);
+			result = writeAbstractPersistentCollection((AbstractPersistentCollection) objectToSerialize, cacheKey, eagerlySerialize);
 		} else if (objectToSerialize.getClass().isArray())
 		{
 			result = writeArray((Object[]) objectToSerialize, cacheKey);
 		} else if (objectToSerialize instanceof Collection)
 		{
-			result = writeCollection(objectToSerialize, cacheKey);
+			result = writeCollection((Collection<?>) objectToSerialize, cacheKey);
 		} else if (objectToSerialize instanceof Map)
 		{
 			result = writeMap(objectToSerialize, cacheKey);
@@ -211,11 +224,13 @@ public class HibernateSerializer extends AbstractSerializer
 
 	private boolean shouldAggressivelyProxy(Object objectToSerialize, boolean eagerlySerialize)
 	{
-		if (eagerlySerialize) return false;
-		if (hasAnnotation(objectToSerialize,AggressivelyProxy.class))
+		if (eagerlySerialize)
+			return false;
+		if (hasAnnotation(objectToSerialize, AggressivelyProxy.class))
 			return true;
-		if (!useAggressiveProxying) return false;
-		return !sourceContainsProperty(objectToSerialize) && canBeAgressivelyProxied(objectToSerialize); 
+		if (!useAggressiveProxying)
+			return false;
+		return !sourceContainsProperty(objectToSerialize) && canBeAgressivelyProxied(objectToSerialize);
 	}
 
 
@@ -223,18 +238,22 @@ public class HibernateSerializer extends AbstractSerializer
 	{
 		return Object.class.getAnnotation(annotation) != null;
 	}
+
+
 	private boolean canBeAgressivelyProxied(Object objectToSerialize)
 	{
 		if (!(objectToSerialize instanceof IHibernateProxy))
 			return false;
-		
+
 		if (isRootObject(objectToSerialize))
 		{
 			return permitAgressiveProxyingOnRoot;
 		}
-		
+
 		return true;
 	}
+
+
 	private boolean isRootObject(Object objectToSerialize)
 	{
 		return objectToSerialize == getSource();
@@ -260,7 +279,7 @@ public class HibernateSerializer extends AbstractSerializer
 				Method readMethod = pd.getReadMethod();
 				if (readMethod == null)
 					continue;
-				boolean explicitlyFetch = methodHasAnnotation(readMethod,NoLazyLoadOnSerialize.class);
+				boolean explicitlyFetch = methodHasAnnotation(readMethod, NoLazyLoadOnSerialize.class);
 				if (explicitlyFetch)
 					continue;
 				if (propertyNameIsExcluded(propName))
@@ -278,10 +297,11 @@ public class HibernateSerializer extends AbstractSerializer
 					Object serializedValue;
 					if (methodHasAnnotation(readMethod, AggressivelyProxy.class))
 					{
-						HibernateSerializer aggressiveSerializer = new HibernateSerializer(val,true,cache,sessionFactory);
+						HibernateSerializer aggressiveSerializer = new HibernateSerializer(val, true, cache, sessionFactory);
 						aggressiveSerializer.permitAgressiveProxyingOnRoot = true;
 						serializedValue = aggressiveSerializer.serialize();
-					} else {
+					} else
+					{
 						boolean eagerlySerialize = methodHasAnnotation(readMethod, EagerlySerialize.class);
 						serializedValue = serialize(val, eagerlySerialize);
 					}
@@ -302,22 +322,22 @@ public class HibernateSerializer extends AbstractSerializer
 		}
 		return asObject;
 	}
-	private boolean methodHasAnnotation(Method readMethod,Class<? extends Annotation> annotation)
+
+
+	private boolean methodHasAnnotation(Method readMethod, Class<? extends Annotation> annotation)
 	{
 		return readMethod.getAnnotation(annotation) != null;
 	}
 
 
-	private Object writeCollection(Object obj, Object key)
+	private Object writeCollection(Collection<?> collection, Object key)
 	{
 		Object result;
 		ArrayList list = new ArrayList();
 		// cache.put(key, list);
 
-		Iterator itr = ((Collection) obj).iterator();
-		while (itr.hasNext())
+		for (Object collectionMemeber : collection)
 		{
-			Object collectionMemeber = itr.next();
 			Object translatedCollectionMember;
 			Object collectionMemeberCacheKey = cache.getCacheKey(collectionMemeber);
 			if (getPageSize() != -1 && list.size() > getPageSize())
@@ -387,10 +407,9 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
-	private Object writeAbstractPersistentCollection(Object obj, Object key, boolean eagerlySerialize)
+	private Object writeAbstractPersistentCollection(AbstractPersistentCollection collection, Object key, boolean eagerlySerialize)
 	{
 		Object result;
-		AbstractPersistentCollection collection = (AbstractPersistentCollection) obj;
 		if (!collection.wasInitialized() && !eagerlySerialize)
 		{
 			// go load our Collection of dpHibernateProxy objects
@@ -416,11 +435,15 @@ public class HibernateSerializer extends AbstractSerializer
 			{
 				Object next = itr.next();
 				Object newObj = serialize(next);
-				obj = newObj;
 				items.add(newObj);
 			}
 
 			result = items;
+		}
+		// DEBUGGING .. Remove
+		if (collection.getRole().contains("users") && result == null)
+		{
+			result = writeAbstractPersistentCollection(collection, key, eagerlySerialize);
 		}
 		return result;
 	}
@@ -502,9 +525,9 @@ public class HibernateSerializer extends AbstractSerializer
 				AbstractCollectionPersister absPersister = (AbstractCollectionPersister) persister;
 				String className = absPersister.getElementType().getName();
 
-				if (session instanceof SessionImpl)
+				if (session instanceof Session)
 				{
-					List pkIds = getPkIds(session, persister, collection);
+					List pkIds = getPkIds(session, absPersister, collection);
 
 					// create a new HibernateProxy for each id.
 					List proxies = new ArrayList();
@@ -544,40 +567,47 @@ public class HibernateSerializer extends AbstractSerializer
 	 * 
 	 * @return
 	 */
-	private List getPkIds(SessionImplementor session, CollectionPersister persister, PersistentCollection collection) throws ClassNotFoundException
+	private List getPkIds(Session session, AbstractCollectionPersister persister, PersistentCollection collection) throws ClassNotFoundException
 	{
-		AbstractCollectionPersister absPersister = (AbstractCollectionPersister) persister;
+		List results = new ArrayList();
+		/*
+		 * String tablename = persister.getTableName(); Iterator entries =
+		 * collection.entries(persister); while (entries.hasNext()) { Object
+		 * entry = entries.next(); if (entry instanceof IHibernateProxy) {
+		 * results.add(((IHibernateProxy) entry).getProxyKey()); } else {
+		 * log.warn
+		 * ("Cannot proxy object that does not implement IHibernateProxy"); } }
+		 * return results;
+		 */
 		String[] keyNames;
-
-		if (absPersister.isOneToMany() || absPersister.isManyToMany())
+		if (persister.isOneToMany() || persister.isManyToMany())
 		{
-			keyNames = absPersister.getElementColumnNames();
+			keyNames = persister.getElementColumnNames();
 		} else
 		{
-			keyNames = absPersister.getKeyColumnNames();
+			keyNames = persister.getKeyColumnNames();
 		}
 		// String[] columnNames = absPersister.getElementColumnNames();
-
-		SimpleSelect pkSelect = new SimpleSelect(((SessionImpl) session).getFactory().getDialect());
-		pkSelect.setTableName(absPersister.getTableName());
+		Dialect dialect = getDialect(persister);
+		SimpleSelect pkSelect = new SimpleSelect(dialect);
+		pkSelect.setTableName(persister.getTableName());
 		pkSelect.addColumns(keyNames);
-		pkSelect.addCondition(absPersister.getKeyColumnNames(), "=?");
+		pkSelect.addCondition(persister.getKeyColumnNames(), "=?");
 
 		String sql = pkSelect.toStatementString();
-		List results = new ArrayList();
 
 		try
 		{
 			// int size = absPersister.getSize(collection.getKey(),
 			// eventSession);
-			Query q2 = ((SessionImpl) session).createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
+			Query q2 = session.createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
 
 			// List hibernateResults = q2.list();
 			// return results;
 
 			Type t = persister.getKeyType();
 
-			PreparedStatement stmt = ((SessionImpl) session).connection().prepareStatement(sql);
+			PreparedStatement stmt = session.connection().prepareStatement(sql);
 			if (t instanceof StringType)
 			{
 				stmt.setString(1, collection.getKey().toString());
@@ -603,6 +633,28 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
+	private Dialect getDialect(AbstractCollectionPersister persister)
+	{
+		if (HibernateSerializer.dialect == null)
+		{
+			try
+			{
+				HibernateSerializer.dialect = Dialect.getDialect();
+			} catch (Throwable t)
+			{
+				SessionFactoryImpl sfi = (SessionFactoryImpl) sessionFactory;
+				HibernateSerializer.dialect = sfi.getDialect();
+			}
+			if (HibernateSerializer.dialect == null)
+			{
+				throw new RuntimeException("Could not determine dialect");
+			}
+		}
+		return HibernateSerializer.dialect;
+
+	}
+
+
 	boolean sourceContainsProperty(Object member)
 	{
 		for (Object propertyValue : getSourcePropertyValues())
@@ -612,15 +664,20 @@ public class HibernateSerializer extends AbstractSerializer
 		}
 		return false;
 	}
+
 	private List<Object> sourcePropertyValues;
+
+
 	private List<Object> getSourcePropertyValues()
 	{
-		if (sourcePropertyValues==null)
+		if (sourcePropertyValues == null)
 		{
 			sourcePropertyValues = getPropertyValues(getSource());
 		}
 		return sourcePropertyValues;
 	}
+
+
 	private List<Object> getPropertyValues(Object member)
 	{
 		List<Object> result = new ArrayList<Object>();

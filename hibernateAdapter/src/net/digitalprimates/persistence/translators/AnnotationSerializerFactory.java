@@ -1,5 +1,8 @@
 package net.digitalprimates.persistence.translators;
 
+import java.io.File;
+import java.io.InputStream;
+
 import org.hibernate.cfg.AnnotationConfiguration;
 
 /**
@@ -11,12 +14,20 @@ import org.hibernate.cfg.AnnotationConfiguration;
  */
 public class AnnotationSerializerFactory extends SimpleSerializationFactory
 {
+	public AnnotationSerializerFactory()
+	{
+		String s = "";
+		s.concat("");
+	}
 	@Override
 	protected void initalizeSessionFactory()
 	{
 		try
 		{
 			// Create the SessionFactory
+//			InputStream configInputStream =  getClass().getResourceAsStream("/hibernate.cfg.xml");
+			
+			
 			sessionFactory = new AnnotationConfiguration().configure().buildSessionFactory();
 		} catch (Throwable ex)
 		{

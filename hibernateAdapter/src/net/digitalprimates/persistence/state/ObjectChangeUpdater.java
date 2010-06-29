@@ -37,6 +37,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class ObjectChangeUpdater implements IObjectChangeUpdater
 {
 
+	public ObjectChangeUpdater(){}
+	public ObjectChangeUpdater(SessionFactory sessionFactory,IProxyResolver proxyResolver,DPHibernateCache cache)
+	{
+		this.sessionFactory = sessionFactory;
+		this.proxyResolver = proxyResolver;
+		this.cache = cache;
+	}
+	public ObjectChangeUpdater(SessionFactory sessionFactory,IProxyResolver proxyResolver)
+	{
+		this.sessionFactory = sessionFactory;
+		this.proxyResolver = proxyResolver;
+		this.cache = new DPHibernateCache();
+	}
 	@Resource
 	private SessionFactory sessionFactory;
 

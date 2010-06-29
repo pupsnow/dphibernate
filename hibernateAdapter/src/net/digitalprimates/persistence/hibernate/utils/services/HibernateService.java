@@ -106,7 +106,7 @@ public class HibernateService
     }
 
 
-    public Object load(Class cls, Serializable id)
+    public Object loadBean(Class cls, Serializable id)
     {
         Session session = null;
          Object result;

@@ -204,6 +204,7 @@ public class HibernateAdapter extends JavaAdapter
 			{
 				long s3 = new Date().getTime();
 				ISerializer serializer = serializerFactory.getSerializer(results);
+				
 				results = serializer.serialize();
 				long e3 = new Date().getTime();
 				System.out.println("{serialize} " + (e3 - s3));

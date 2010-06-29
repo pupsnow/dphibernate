@@ -11,7 +11,10 @@ public class SimpleSerializationFactory implements ISerializerFactory
 {
 	protected SessionFactory sessionFactory;
 
-
+	public SimpleSerializationFactory()
+	{
+		initalizeSessionFactory();
+	}
 	@Override
 	public IDeserializer getDeserializer()
 	{
