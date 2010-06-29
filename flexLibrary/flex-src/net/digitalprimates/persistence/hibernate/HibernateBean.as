@@ -35,7 +35,10 @@ package net.digitalprimates.persistence.hibernate
 		}
 		
 		public function set proxyKey( value:Object ):void {
-			StateRepository.removeFromNewEntityList( __proxyKey.toString() );
+			if (__proxyKey)
+			{
+				StateRepository.removeFromNewEntityList( __proxyKey.toString() );
+			}
 			__proxyKey = value;
 		}
 
