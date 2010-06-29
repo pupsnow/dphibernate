@@ -20,6 +20,7 @@ package net.digitalprimates.persistence.hibernate;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
@@ -48,7 +49,7 @@ public class HibernateAdapter extends JavaAdapter
 	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
 	private String loadMethodName;
 	private String saveMethodName;
-	private ArrayList<DPHibernateOperation> operations;
+	private HashMap<Class<? extends DPHibernateOperation>,DPHibernateOperation> operations;
 	private ISerializerFactory serializerFactory;
 
 	public HibernateAdapter()
@@ -70,18 +71,23 @@ public class HibernateAdapter extends JavaAdapter
 		initalizeOperations();
 		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
 		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
-		operations.add(new LoadDPProxyOperation(loadMethodName));
-		operations.add(new SaveDPProxyOperation(getSaveMethodName()));
+		addOperation(new LoadDPProxyOperation(loadMethodName));
+		addOperation(new SaveDPProxyOperation(saveMethodName));
 		
 		logConfiguration();
 	}
 	
 
+	private void addOperation(DPHibernateOperation operation)
+	{
+		operations.put(operation.getClass(), operation);
+	}
+
 	private void initalizeOperations()
 	{
 		if (operations == null)
 		{
-			operations = new ArrayList<DPHibernateOperation>();
+			operations = new HashMap<Class<? extends DPHibernateOperation>, DPHibernateOperation>();
 		}
 	}
 
@@ -147,7 +153,7 @@ public class HibernateAdapter extends JavaAdapter
 			// (RemotingDestinationControl)this.getControl().getParentControl();//destination;
 			RemotingMessage remotingMessage = (RemotingMessage) message;
 			
-			for (DPHibernateOperation operation : operations)
+			for (DPHibernateOperation operation : operations.values())
 			{
 				if (operation.appliesForMessage(remotingMessage))
 				{
@@ -222,28 +228,9 @@ public class HibernateAdapter extends JavaAdapter
 		return results;
 	}
 
-
-	public void setLoadMethodName(String loadMethodName)
+	public <T extends DPHibernateOperation> T getOperation(Class<T> operationClass)
 	{
-		this.loadMethodName = loadMethodName;
-	}
-
-
-	public String getLoadMethodName()
-	{
-		return loadMethodName;
-	}
-
-
-	public void setSaveMethodName(String saveMethodName)
-	{
-		this.saveMethodName = saveMethodName;
-	}
-
-
-	public String getSaveMethodName()
-	{
-		return saveMethodName;
+		return (T) operations.get(operationClass);
 	}
 
 }

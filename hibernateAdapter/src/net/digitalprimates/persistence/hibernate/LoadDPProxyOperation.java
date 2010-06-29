@@ -24,7 +24,7 @@ public class LoadDPProxyOperation implements DPHibernateOperation {
 	public void execute(RemotingMessage remotingMessage) {
 		try
 		{
-			remotingMessage.setOperation(loadMethodName);
+			remotingMessage.setOperation(getLoadMethodName());
 			List paramArray = remotingMessage.getParameters();
 			List args = new ArrayList();
 			Object param = paramArray.get(1);
@@ -57,6 +57,10 @@ public class LoadDPProxyOperation implements DPHibernateOperation {
 			ex.printStackTrace();
 		}
 
+	}
+	public String getLoadMethodName()
+	{
+		return loadMethodName;
 	}
 
 }

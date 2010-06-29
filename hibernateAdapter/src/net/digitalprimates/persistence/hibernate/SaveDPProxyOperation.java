@@ -14,7 +14,11 @@ public class SaveDPProxyOperation implements DPHibernateOperation {
 	}
 
 	public void execute(RemotingMessage remotingMessage) {
-		remotingMessage.setOperation(saveMethodName);
+		remotingMessage.setOperation(getSaveMethodName());
+	}
+	public String getSaveMethodName()
+	{
+		return saveMethodName;
 	}
 
 }
