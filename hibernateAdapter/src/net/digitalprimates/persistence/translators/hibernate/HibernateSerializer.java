@@ -62,6 +62,7 @@ import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.sql.SimpleSelect;
 import org.hibernate.transform.PassThroughResultTransformer;
+import org.hibernate.transform.ResultTransformer;
 import org.hibernate.type.StringType;
 import org.hibernate.type.Type;
 import org.springframework.transaction.annotation.Transactional;
@@ -600,7 +601,8 @@ public class HibernateSerializer extends AbstractSerializer
 		{
 			// int size = absPersister.getSize(collection.getKey(),
 			// eventSession);
-			Query q2 = session.createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(new PassThroughResultTransformer());
+			ResultTransformer transformer = ResultTransformerUtil.PASS_THROUGH_RESULT_TRANSFORMER;
+			Query q2 = session.createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(transformer);
 
 			// List hibernateResults = q2.list();
 			// return results;
