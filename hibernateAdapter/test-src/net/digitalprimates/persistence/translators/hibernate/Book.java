@@ -1,6 +1,6 @@
 package net.digitalprimates.persistence.translators.hibernate;
 
-class Book  extends BaseEntity
+public class Book extends BaseEntity
 {
 	private Author author;
 	public Book(){};

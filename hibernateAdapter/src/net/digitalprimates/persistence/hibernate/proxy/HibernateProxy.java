@@ -40,6 +40,7 @@ public class HibernateProxy implements IHibernateProxy
 	{
 		this.proxyKey = proxyKey;
 	}
+	
 
 	
 	public Boolean getProxyInitialized() 

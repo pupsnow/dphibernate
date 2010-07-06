@@ -43,12 +43,12 @@ public class HibernateAdapter extends JavaAdapter
 	private static final Log log = LogFactory.getLog(HibernateAdapter.class);
 	
 	protected Destination destination;
-
 	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
 	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
 	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
 	private String loadMethodName;
 	private String saveMethodName;
+	private int pageSize;
 	private HashMap<Class<? extends DPHibernateOperation>,DPHibernateOperation> operations;
 	private ISerializerFactory serializerFactory;
 

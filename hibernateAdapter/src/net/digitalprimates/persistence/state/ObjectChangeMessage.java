@@ -3,8 +3,6 @@ package net.digitalprimates.persistence.state;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.mx.metadata.IllegalPropertyException;
-
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
 public class ObjectChangeMessage {
@@ -125,5 +123,9 @@ public class ObjectChangeMessage {
 			}
 		}
 		throw new RuntimeException("No change message exists for property " + propertyName);
+	}
+	public static ObjectChangeMessageBuilder buildFor(Class<? extends IHibernateProxy> proxyClass)
+	{
+		return new ObjectChangeMessageBuilder(proxyClass);
 	}
 }

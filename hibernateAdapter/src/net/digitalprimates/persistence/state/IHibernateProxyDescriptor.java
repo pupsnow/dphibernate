@@ -10,4 +10,5 @@ public interface IHibernateProxyDescriptor {
 	public void setProxyId(Object object);
 	public String getKey();
 	public boolean matches(IHibernateProxy entity);
+	public boolean isForClass(Class<? extends IHibernateProxy> proxyClass);
 }

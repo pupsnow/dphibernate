@@ -2,7 +2,7 @@ package net.digitalprimates.persistence.translators.hibernate;
 
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
-class BaseEntity implements IHibernateProxy
+public class BaseEntity implements IHibernateProxy
 {
 	private Boolean proxyInitialized = true;
 	private Object proxyKey;

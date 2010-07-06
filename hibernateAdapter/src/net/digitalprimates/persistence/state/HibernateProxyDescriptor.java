@@ -86,4 +86,9 @@ public class HibernateProxyDescriptor implements IHibernateProxyDescriptor {
 		}
 		return false;
 	}
+	@Override
+	public boolean isForClass(Class<? extends IHibernateProxy> proxyClass)
+	{
+		return this.remoteClassName.equals(proxyClass.getCanonicalName());
+	}
 }
