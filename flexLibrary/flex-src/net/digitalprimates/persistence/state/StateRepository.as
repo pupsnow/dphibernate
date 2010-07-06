@@ -12,6 +12,7 @@ package net.digitalprimates.persistence.state
 	import mx.logging.ILogger;
 	import mx.utils.UIDUtil;
 	
+	import net.digitalprimates.persistence.collections.ManagedArrayList;
 	import net.digitalprimates.persistence.events.LazyLoadEvent;
 	import net.digitalprimates.persistence.hibernate.ClassUtils;
 	import net.digitalprimates.persistence.hibernate.HibernateManaged;
@@ -44,6 +45,10 @@ package net.digitalprimates.persistence.state
 				list.addEventListener(CollectionEvent.COLLECTION_CHANGE, onCollectionChange, false, 0, true);
 				listTable[list]=new PropertyReference(propertyName, owner);
 			}
+			if (list is ArrayCollection && ArrayCollection(list).list is ManagedArrayList)
+			{
+				ManagedArrayList(ArrayCollection(list).list).serverCallsEnabled = false;
+			}
 			for (var i:int=0; i < list.length; i++)
 			{
 				if (list.getItemAt(i) is IHibernateProxy)
@@ -61,6 +66,10 @@ package net.digitalprimates.persistence.state
 						}
 					}
 				}
+			}
+			if (list is ArrayCollection && ArrayCollection(list).list is ManagedArrayList)
+			{
+				ManagedArrayList(ArrayCollection(list).list).serverCallsEnabled = false;
 			}
 		}
 
@@ -286,7 +295,7 @@ package net.digitalprimates.persistence.state
 
 		private static function onPropertyChange(event:PropertyChangeEvent):void
 		{
-//			if ( ignorePropertyChanges ) return;
+			if ( ignorePropertyChanges ) return;
 			if (!(event.source is IHibernateProxy))
 			{
 				throw new Error("Got PropertyChange event on non IHibernateProxy");
@@ -298,11 +307,11 @@ package net.digitalprimates.persistence.state
 
 		private static function storeChange(proxy:IHibernateProxy, propertyName:String, oldValue:Object, newValue:Object):void
 		{
-			log.debug("storeChange {0}::{1} {2}", getQualifiedClassName(proxy), proxy.proxyKey, propertyName);
 			if (ignoreProperty(proxy, propertyName))
 				return;
 			if (isLazyLoading(proxy))
 				return;
+			log.debug("storeChange {0}::{1} {2}", getQualifiedClassName(proxy), proxy.proxyKey, propertyName);
 			var changes:ObjectChangeMessage=getStoredChanges(proxy);
 			if (!changes)
 			{
@@ -394,6 +403,7 @@ package net.digitalprimates.persistence.state
 			log.debug("onCollectionChange : {0} ", event.kind);
 			if (event.kind == CollectionEventKind.ADD)
 			{
+				log.debug("onCollectionChange - ADD");
 				for each (var item:IHibernateProxy in event.items)
 				{
 					generateFullChangeMessage(item);
@@ -404,6 +414,7 @@ package net.digitalprimates.persistence.state
 			// For collections, we don't store the old value
 			if (event.kind == CollectionEventKind.ADD || event.kind == CollectionEventKind.REMOVE || event.kind == CollectionEventKind.REPLACE)
 			{
+				log.debug("onCollectionChange - Calling storeChange as a result of event kind {0}",event.kind);
 				storeChange(propertyReference.owner, propertyReference.propertyName, null, list);
 			}
 		}
@@ -452,6 +463,8 @@ package net.digitalprimates.persistence.state
 		private static function ignoreProperty(object:Object, propertyName:String):Boolean
 		{
 			if (_ignoredProperties.hasOwnProperty(propertyName))
+				return true;
+			if (ClassUtils.isImmutable(object))
 				return true;
 			if (ClassUtils.isTransient(object, propertyName))
 				return true;

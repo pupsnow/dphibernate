@@ -170,6 +170,10 @@ package net.digitalprimates.persistence.hibernate
         }
 public static function manageArrayCollection(collection:ArrayCollection,ro:IHibernateRPC):void
 {
+	if (collection.list is ManagedArrayList)
+	{
+		ManagedArrayList(collection.list).serverCallsEnabled = false;
+	}
 	var isPagedCollection : Boolean = false;
 	for (var i:int = 0; i < collection.length; i++)
 	{
@@ -184,6 +188,10 @@ public static function manageArrayCollection(collection:ArrayCollection,ro:IHibe
 	{
 		var managedArrayList:ManagedArrayList = new ManagedArrayList(collection.source);
 		collection.list = managedArrayList;
+	}
+	if (collection.list is ManagedArrayList)
+	{
+		ManagedArrayList(collection.list).serverCallsEnabled = true;
 	}
 }
 

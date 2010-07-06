@@ -22,6 +22,9 @@ package net.digitalprimates.persistence.collections
 		private var pendingItems : Dictionary = new Dictionary(); // Of AsyncToken,PendingItem
 		private var log : ILogger = LogUtil.getLogger(this);
 		private var loadingIndexes:Dictionary = new Dictionary(); // Of index,index
+		
+		public var serverCallsEnabled:Boolean = true;
+		
 		public function ManagedArrayList(source:Array=null)
 		{
 			super(source);
@@ -40,6 +43,9 @@ package net.digitalprimates.persistence.collections
 			// Optomized exit..
 			if (indexCurrentlyBeingLoaded(index))
 				return;
+			if (!serverCallsEnabled)
+				return;
+			
 			var remoteObject : IHibernateRPC = HibernateManaged.getIHibernateRPCForBean( proxy );
 			if (remoteObject == null)
 			{
