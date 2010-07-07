@@ -18,7 +18,6 @@
 
 package net.digitalprimates.persistence.hibernate;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -43,14 +42,17 @@ public class HibernateAdapter extends JavaAdapter
 	private static final Log log = LogFactory.getLog(HibernateAdapter.class);
 	
 	protected Destination destination;
+	private static final String DEFAULT_LOAD_BATCH_METHOD_NAME = "loadProxyBatch";
 	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
 	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
 	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
 	private String loadMethodName;
 	private String saveMethodName;
+	private String loadBatchMethodName;
 	private int pageSize;
 	private HashMap<Class<? extends DPHibernateOperation>,DPHibernateOperation> operations;
 	private ISerializerFactory serializerFactory;
+
 
 	public HibernateAdapter()
 	{
@@ -70,13 +72,19 @@ public class HibernateAdapter extends JavaAdapter
 		initalizeSerializerFactory(dpHibernateProps);
 		initalizeOperations();
 		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
+		loadBatchMethodName = dpHibernateProps.getPropertyAsString("loadBatchMethod", getDefaultLoadBatchMethodName());
 		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
 		addOperation(new LoadDPProxyOperation(loadMethodName));
 		addOperation(new SaveDPProxyOperation(saveMethodName));
-		
+		addOperation(new LoadDPProxyBatchOperation(loadBatchMethodName));
 		logConfiguration();
 	}
 	
+
+	private String getDefaultLoadBatchMethodName()
+	{
+		return (loadBatchMethodName != null) ? loadBatchMethodName : DEFAULT_LOAD_BATCH_METHOD_NAME;
+	}
 
 	private void addOperation(DPHibernateOperation operation)
 	{

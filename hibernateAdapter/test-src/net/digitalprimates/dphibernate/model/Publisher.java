@@ -1,9 +1,17 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package net.digitalprimates.dphibernate.model;
 
-class Publisher  extends BaseEntity
+import java.util.List;
+
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
+
+@Entity
+public class Publisher  extends BaseEntity
 {
 	private String name;
 	private String address;
+	@OneToMany(mappedBy="publisher")
+	private List<Author> authors;
 	public Publisher(){};
 	public Publisher(String name, String address)
 	{
@@ -26,5 +34,13 @@ class Publisher  extends BaseEntity
 	public String getAddress()
 	{
 		return address;
+	}
+	public void setAuthors(List<Author> authors)
+	{
+		this.authors = authors;
+	}
+	public List<Author> getAuthors()
+	{
+		return authors;
 	}
 }

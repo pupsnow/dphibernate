@@ -8,7 +8,9 @@ public class SpringDataAccessService extends DataAccessService
 
 	public SpringDataAccessService(SessionFactory sessionFactory,ApplicationContext applicationContext)
 	{
-		super(sessionFactory,new SpringProxyUpdaterService(sessionFactory, applicationContext),new ProxyLoadService(sessionFactory));
+		super(sessionFactory,new SpringProxyUpdaterService(sessionFactory, applicationContext),
+				new ProxyLoadService(sessionFactory),
+				new ProxyBatchLoader(sessionFactory));
 	}
 	
 }

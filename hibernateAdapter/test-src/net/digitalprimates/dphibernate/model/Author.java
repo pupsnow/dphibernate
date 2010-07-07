@@ -1,14 +1,22 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package net.digitalprimates.dphibernate.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class Author extends BaseEntity
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+@Entity
+public class Author extends BaseEntity
 {
 	String name;
 	int age;
+	@OneToMany(mappedBy="author")
 	List<Book> books;
+	@ManyToOne
 	Publisher publisher;
+	
 	public Author(){}
 	public Author(String name, int age, Publisher publisher)
 	{

@@ -1,8 +1,14 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package net.digitalprimates.dphibernate.model;
 
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+
+@Entity
 public class Book extends BaseEntity
 {
+	@ManyToOne
 	private Author author;
+	private String title;
 	public Book(){};
 	public Book(Author author,String title, Object key)
 	{
@@ -31,6 +37,5 @@ public class Book extends BaseEntity
 	{
 		this.title = title;
 	}
-	private String title;
 	
 }

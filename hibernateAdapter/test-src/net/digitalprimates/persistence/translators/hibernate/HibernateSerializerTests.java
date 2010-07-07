@@ -2,6 +2,8 @@ package net.digitalprimates.persistence.translators.hibernate;
 
 import static org.junit.Assert.*;
 
+import net.digitalprimates.dphibernate.model.Author;
+
 import org.junit.Test;
 
 public class HibernateSerializerTests

@@ -9,8 +9,6 @@ import java.util.List;
 import net.digitalprimates.persistence.conversion.TypeMapper;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
-import org.apache.commons.beanutils.MethodUtils;
-import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

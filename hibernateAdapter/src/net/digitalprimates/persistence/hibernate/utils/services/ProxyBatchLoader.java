@@ -1,6 +1,6 @@
 package net.digitalprimates.persistence.hibernate.utils.services;
-
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -8,55 +8,105 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import net.digitalprimates.persistence.hibernate.DPHibernateException;
+import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
-import org.hibernate.classic.Session;
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.IdentifierEqExpression;
 import org.hibernate.criterion.Restrictions;
 
 import com.google.common.collect.ArrayListMultimap;
 
 public class ProxyBatchLoader implements IProxyBatchLoader
 {
-	
+
 	SessionFactory sessionFactory;
+
 
 	public ProxyBatchLoader(SessionFactory sessionFactory)
 	{
 		this.sessionFactory = sessionFactory;
 	}
+
+
 	@Override
 	public List<ProxyLoadResult> loadProxyBatch(ProxyLoadRequest[] requests)
 	{
-		// Order the requests by class Type
-		// For each class type, gather the ID's
-		// Load each group of entities
-		// Map each loaded entity back to the original request object
-		// and generate a matching response.
+		List<ProxyLoadResult> results = new ArrayList<ProxyLoadResult>();
 		Map<String, Collection<Serializable>> requestsByClass = getRequestsByClass(requests);
 		Set<Entry<String, Collection<Serializable>>> requestClassEntrySet = requestsByClass.entrySet();
 		for (Entry<String, Collection<Serializable>> requestClassEntry : requestClassEntrySet)
 		{
 			List<Object> loadedEntities = loadEntities(requestClassEntry);
-//			List<ProxyLoadResult> loadResults = mapLoadedEntitesToOriginalRequest(loadedEntities,requests);
+			List<ProxyLoadResult> mappedResults = mapLoadedEntitesToOriginalRequest(loadedEntities, requests);
+			results.addAll(mappedResults);
+		}
+		return results;
+	}
+
+
+	List<ProxyLoadResult> mapLoadedEntitesToOriginalRequest(List<? extends Object> loadedEntities, ProxyLoadRequest[] requests)
+	{
+		List<ProxyLoadResult> result = new ArrayList<ProxyLoadResult>();
+		for (Object entity : loadedEntities)
+		{
+			assertEntityIsHibernateProxy(entity);
+			IHibernateProxy proxy = (IHibernateProxy) entity;
+			ProxyLoadRequest matchingRequest = findProxyLoadRequestForProxy(proxy, requests);
+			assertResultWasInListOfRequests(entity, matchingRequest);
+			ProxyLoadResult proxyLoadResult = new ProxyLoadResult(matchingRequest.getRequestKey(), entity);
+			result.add(proxyLoadResult);
+		}
+		return result;
+	}
+
+
+	private void assertResultWasInListOfRequests(Object entity, ProxyLoadRequest matchingRequest)
+	{
+		if (matchingRequest == null)
+		{
+			throw new RuntimeException("An entity was returned from the database which was not requested: " + entity.toString());
+		}
+	}
+
+
+	private ProxyLoadRequest findProxyLoadRequestForProxy(IHibernateProxy proxy, ProxyLoadRequest[] requests)
+	{
+		for (ProxyLoadRequest request:requests)
+		{
+			if (request.matchesEntity(proxy))
+			{
+				return request;
+			}
 		}
 		return null;
 	}
-	private List<Object> loadEntities(Entry<String, Collection<Serializable>> requestClassEntry) 
+
+
+	private void assertEntityIsHibernateProxy(Object en)
+	{
+		if (!(en instanceof IHibernateProxy))
+		{
+			throw new RuntimeException("Returned object is not IHibernateProxy.  Bulk loading not supported");
+		}
+	}
+
+
+	private List<Object> loadEntities(Entry<String, Collection<Serializable>> requestClassEntry)
 	{
 		Class<?> requestClass = getRequestClass(requestClassEntry.getKey());
 		Criteria criteria = sessionFactory.getCurrentSession().createCriteria(requestClass);
 		criteria.add(Restrictions.in("id", requestClassEntry.getValue()));
 		List<Object> results = criteria.list();
 		return results;
-//		session.get
-//		String keyName;
-//		IdentifierEqExpression identifierExpression = IdentifierEqExpression();
-//		Restrictions.naturalId().
-//		criteria.add(Restrictions.in(keyName, requestClassEntry.getValue()));
+		// session.get
+		// String keyName;
+		// IdentifierEqExpression identifierExpression =
+		// IdentifierEqExpression();
+		// Restrictions.naturalId().
+		// criteria.add(Restrictions.in(keyName, requestClassEntry.getValue()));
 	}
+
+
 	private Class<?> getRequestClass(String className)
 	{
 		try
@@ -68,7 +118,10 @@ public class ProxyBatchLoader implements IProxyBatchLoader
 			throw new DPHibernateException(className + " is not a recognized class");
 		}
 	}
-	Map<String,Collection<Serializable>> getRequestsByClass(ProxyLoadRequest[] requests) {
+
+
+	Map<String, Collection<Serializable>> getRequestsByClass(ProxyLoadRequest[] requests)
+	{
 		ArrayListMultimap<String, Serializable> requestsByClass = ArrayListMultimap.create();
 		for (ProxyLoadRequest request : requests)
 		{

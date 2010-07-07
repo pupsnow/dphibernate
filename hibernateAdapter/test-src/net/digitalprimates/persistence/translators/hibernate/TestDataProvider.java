@@ -1,5 +1,9 @@
 package net.digitalprimates.persistence.translators.hibernate;
 
+import net.digitalprimates.dphibernate.model.Author;
+import net.digitalprimates.dphibernate.model.Book;
+import net.digitalprimates.dphibernate.model.Publisher;
+
 public class TestDataProvider
 {
 	static Author getAuthor()

@@ -20,19 +20,23 @@ import net.digitalprimates.persistence.state.ObjectChangeResult;
  * @author Marty Pitt
  *
  */
-public class DataAccessService implements IProxyUpdateService, IProxyLoadService {
+public class DataAccessService implements IProxyUpdateService, IProxyLoadService, IProxyBatchLoader {
 
 	private final IProxyUpdateService proxyUpdaterService;
 	private final IProxyLoadService proxyLoadService;
-	public DataAccessService(SessionFactory sessionFactory,IProxyUpdateService proxyUpdateService,IProxyLoadService proxyLoadService)
+	private final IProxyBatchLoader proxyBatchLoader;
+	
+	public DataAccessService(SessionFactory sessionFactory,IProxyUpdateService proxyUpdateService,IProxyLoadService proxyLoadService,IProxyBatchLoader proxyBatchLoader)
 	{
 		this.proxyLoadService = proxyLoadService;
 		this.proxyUpdaterService = proxyUpdateService;
+		this.proxyBatchLoader = proxyBatchLoader;
 	}
 	public DataAccessService(SessionFactory sessionFactory)
 	{
 		proxyLoadService = new ProxyLoadService(sessionFactory);
 		proxyUpdaterService = new ProxyUpdaterService(sessionFactory);
+		proxyBatchLoader = new ProxyBatchLoader(sessionFactory);
 	}
 	@Override
 	public Set<ObjectChangeResult> saveBean(
@@ -48,6 +52,11 @@ public class DataAccessService implements IProxyUpdateService, IProxyLoadService
 	@Override
 	public Object loadBean(Class daoClass, Serializable id) {
 		return proxyLoadService.loadBean(daoClass, id);
+	}
+	@Override
+	public List<ProxyLoadResult> loadProxyBatch(ProxyLoadRequest[] requests)
+	{
+		return proxyBatchLoader.loadProxyBatch(requests);
 	}
 
 }

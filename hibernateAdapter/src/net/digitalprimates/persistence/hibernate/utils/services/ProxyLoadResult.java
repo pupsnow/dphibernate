@@ -41,4 +41,8 @@ public class ProxyLoadResult
 	{
 		return result;
 	}
+	public boolean isForRequest(ProxyLoadRequest request)
+	{
+		return this.requestKey.equals(request.getRequestKey());
+	}
 }

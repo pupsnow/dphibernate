@@ -1,7 +1,7 @@
 package net.digitalprimates.persistence.state;
 
 import static org.junit.Assert.*;
-import net.digitalprimates.persistence.translators.hibernate.Book;
+import net.digitalprimates.dphibernate.model.Book;
 
 import org.junit.Test;
 
