@@ -32,6 +32,13 @@
     <classEntry path="net.digitalprimates.persistence.state.IHibernateUpdater"/>
     <classEntry path="net.digitalprimates.persistence.state.HibernateUpdaterFacade"/>
     <classEntry path="net.digitalprimates.persistence.collections.ManagedArrayList"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.LoadProxyRequestBuffer"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.IOperationBufferFactory"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.IOperationBuffer"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.OperationBufferFactory"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.LoadDPProxyOperationBufferFactory"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.ProxyLoadRequest"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.ProxyLoadResult"/>
   </includeClasses>
   <includeResources>
     <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>

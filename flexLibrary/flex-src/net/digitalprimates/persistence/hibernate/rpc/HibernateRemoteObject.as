@@ -22,6 +22,7 @@ package net.digitalprimates.persistence.hibernate.rpc
     
     import mx.core.mx_internal;
     import mx.logging.ILogger;
+    import mx.rpc.AbstractOperation;
     import mx.rpc.AsyncToken;
     import mx.rpc.Responder;
     import mx.rpc.events.FaultEvent;
@@ -44,10 +45,49 @@ package net.digitalprimates.persistence.hibernate.rpc
 		private var log : ILogger = LogUtil.getLogger( this );
 		private var loadingProxies:Object = new Object();
 		
-        public function HibernateRemoteObject(destination:String = null)
+		public var operationBufferFactory:IOperationBufferFactory;
+		
+		/**
+		 * A method which is invoked after the operation has been
+		 * constructed.  Allows for modifying an operation, before
+		 * it's used for anything.
+		 * Useful for testing.
+		 * 
+		 * Method must be of type:
+		 * function(operation:Operation):void {}
+		 * */
+		internal var operationPostConstructDecorator:Function;
+		
+        public function HibernateRemoteObject(destination:String = null,operationBufferFactory:IOperationBufferFactory=null)
         {
             super(destination);
+//			requestBuffer = new LoadProxyRequestBuffer(this,50,350);
+			this.operationBufferFactory = operationBufferFactory;
         }
+		
+		override public function getOperation(name:String):AbstractOperation
+		{
+			var operation:AbstractOperation = super.getOperation(name);
+			bufferOperation(operation);
+			if (operationPostConstructDecorator != null)
+			{
+				operationPostConstructDecorator(operation);
+			}
+			return operation;
+		}
+
+		private function bufferOperation(operation:AbstractOperation):void
+		{
+			if (!operationBufferFactory)
+				return;
+
+			var buffer:IOperationBuffer = operationBufferFactory.getBuffer(this,operation);
+			if (buffer)
+			{
+				operation.operationManager = buffer.bufferedSend;
+			}
+		}
+
 
         public function loadProxy(proxyKey:Object, hibernateProxy:IHibernateProxy):AsyncToken
         {

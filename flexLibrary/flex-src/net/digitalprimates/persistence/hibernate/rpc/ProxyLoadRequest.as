@@ -3,6 +3,7 @@ package net.digitalprimates.persistence.hibernate.rpc
 	import mx.rpc.AsyncToken;
 	import mx.utils.UIDUtil;
 
+	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.utils.services.ProxyLoadRequest")]
 	public class ProxyLoadRequest
 	{
 		private var _internalAsyncToken:AsyncToken;
@@ -10,7 +11,7 @@ package net.digitalprimates.persistence.hibernate.rpc
 		private var _proxyID:Object;
 		private var _requestKey:String;
 		
-		public function ProxyLoadRequest(proxyID:Object, remoteClassName:String, internalAsyncToken:AsyncToken)
+		public function ProxyLoadRequest(proxyID:Object=null, remoteClassName:String=null, internalAsyncToken:AsyncToken=null)
 		{
 			this._className=remoteClassName;
 			this._proxyID=proxyID;
@@ -28,8 +29,30 @@ package net.digitalprimates.persistence.hibernate.rpc
 		{
 			return _className;
 		}
+		
 
-		public function get proxyID():*
+		public function set internalAsyncToken(value:AsyncToken):void
+		{
+			_internalAsyncToken = value;
+		}
+
+		public function set className(value:String):void
+		{
+			_className = value;
+		}
+
+		public function set proxyID(value:Object):void
+		{
+			_proxyID = value;
+		}
+
+		public function set requestKey(value:String):void
+		{
+			_requestKey = value;
+		}
+
+
+		public function get proxyID():Object
 		{
 			return _proxyID;
 		}

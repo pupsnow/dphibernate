@@ -139,6 +139,10 @@ package net.digitalprimates.persistence.state
 			if (!_changedPropertiesTable) return false;
 			var propertyName:String = messageToRemove.propertyName;
 			var localPropertyMessage:PropertyChangeMessage = _changedPropertiesTable[propertyName];
+			if (!localPropertyMessage)
+			{
+				return true;
+			}
 			if (localPropertyMessage.uid == messageToRemove.uid)
 			{
 				removeChangeForProperty(propertyName);
