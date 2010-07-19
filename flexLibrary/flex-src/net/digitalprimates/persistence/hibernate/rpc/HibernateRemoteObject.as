@@ -18,6 +18,8 @@
 
 package net.digitalprimates.persistence.hibernate.rpc
 {
+    import com.hexagonstar.util.debug.StopWatch;
+    
     import flash.utils.*;
     
     import mx.core.mx_internal;
@@ -78,7 +80,7 @@ package net.digitalprimates.persistence.hibernate.rpc
 
 		private function bufferOperation(operation:AbstractOperation):void
 		{
-			if (!operationBufferFactory)
+			if (!operationBufferFactory || !bufferRequests)
 				return;
 
 			var buffer:IOperationBuffer = operationBufferFactory.getBuffer(this,operation);
@@ -154,10 +156,27 @@ package net.digitalprimates.persistence.hibernate.rpc
 		{
 			_stateTrackingEnabled = value;
 		}
+		
+		private var _bufferRequests:Boolean;
+		public function get bufferRequests():Boolean
+		{
+			return _bufferRequests;
+		}
+		public function set bufferRequests(value:Boolean):void
+		{
+			_bufferRequests = value;
+			if ( bufferRequests && operationBufferFactory == null )
+			{
+				// Initalize with default;
+				operationBufferFactory = new LoadDPProxyOperationBufferFactory();
+			}
+		}
 		private function onProxyLoadComplete(event:ResultEvent):void
 		{
+			var stopwatch:StopWatch = StopWatch.startNew("onProxyLoadComplete");
 			var key:String = event.token.qualifiedProxyKey;
 			setProxyLoaded(key);
+			stopwatch.stopAndTrace();
 		}
 		private function onProxyLoadFault(fault:FaultEvent):void
 		{
