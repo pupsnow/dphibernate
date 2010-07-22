@@ -68,7 +68,6 @@ public class DPHibernateCache {
 			{
 				String role = className + "." + propertyChangeMessage.getPropertyName();
 				String collectionKey = role + "_" + objectId;
-				boolean contained = contains(collectionKey);
 				invalidate(collectionKey);
 			}
 		}
