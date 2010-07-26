@@ -25,6 +25,7 @@ import java.util.List;
 import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
 import net.digitalprimates.persistence.translators.ISerializer;
 import net.digitalprimates.persistence.translators.ISerializerFactory;
+import net.digitalprimates.persistence.translators.SerializerConfiguration;
 import net.digitalprimates.persistence.translators.SimpleSerializationFactory;
 
 import org.apache.commons.logging.Log;
@@ -52,7 +53,7 @@ public class HibernateAdapter extends JavaAdapter
 	private int pageSize;
 	private HashMap<Class<? extends DPHibernateOperation>,DPHibernateOperation> operations;
 	private ISerializerFactory serializerFactory;
-
+	private SerializerConfiguration defaultConfiguration;
 
 	public HibernateAdapter()
 	{
@@ -68,18 +69,25 @@ public class HibernateAdapter extends JavaAdapter
 		if (properties == null || properties.size() == 0)
 			return;
 
-		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
-		initalizeSerializerFactory(dpHibernateProps);
 		initalizeOperations();
+		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
 		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
 		loadBatchMethodName = dpHibernateProps.getPropertyAsString("loadBatchMethod", getDefaultLoadBatchMethodName());
 		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
+		pageSize = dpHibernateProps.getPropertyAsInt("pageSize", getDefaultPageSize());
 		addOperation(new LoadDPProxyOperation(loadMethodName));
 		addOperation(new SaveDPProxyOperation(saveMethodName));
 		addOperation(new LoadDPProxyBatchOperation(loadBatchMethodName));
 		logConfiguration();
+		initializeDefaultConfiguration();
+		initalizeSerializerFactory(dpHibernateProps);
 	}
 	
+
+	private void initializeDefaultConfiguration()
+	{
+		defaultConfiguration = new SerializerConfiguration(pageSize);
+	}
 
 	private String getDefaultLoadBatchMethodName()
 	{
@@ -103,6 +111,11 @@ public class HibernateAdapter extends JavaAdapter
 	{
 		return (saveMethodName != null) ? saveMethodName : DEFAULT_SAVE_METHOD_NAME; 
 	}
+	
+	private int getDefaultPageSize()
+	{
+		return (pageSize != -1) ? pageSize : -1;  
+	}
 
 	private String getDefaultLoadMethodName()
 	{
@@ -113,7 +126,8 @@ public class HibernateAdapter extends JavaAdapter
 	{
 		log.debug("dpHibernate loadMethodName: " + loadMethodName);
 		log.debug("dpHibernate saveMethodName: " + saveMethodName);
-		log.debug("dpHibernate serializerFactory: " + serializerFactory.getClass().getCanonicalName());
+		String serializerFactoryName = (serializerFactory != null) ? serializerFactory.getClass().getCanonicalName() : "undefined";
+		log.debug("dpHibernate serializerFactory: " + serializerFactoryName);
 	}
 
 	private void initalizeSerializerFactory(ConfigMap adapterProps)
@@ -134,6 +148,7 @@ public class HibernateAdapter extends JavaAdapter
 		{
 			serializationFactoryClass = (Class<ISerializerFactory>) Class.forName(serializationFactoryClassName);
 			serializerFactory = serializationFactoryClass.newInstance();
+			serializerFactory.setDefaultConfiguration(defaultConfiguration);
 			HibernateUtil.setSerializerFactory(serializerFactory);
 		} catch (Exception e)
 		{
