@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import flex.messaging.io.amf.ASObject;
+import static net.digitalprimates.dphibernate.test.util.Assert.*;
 
 /**
  * The 'normal' situation is that we'd be serializing
@@ -58,31 +59,7 @@ public class HibernateSerializerTestsOnObjectsThatDontHaveHibernateProxies
 	{
 		return (ASObject) source.get(property);
 	}
-	private void assertIsCollectionOfProxies(List<ASObject> objects)
-	{
-		for (ASObject asObject : objects)
-		{
-			assertASObjectIsProxy(asObject);
-		}
-	}
-
-	private void assertASObjectIsNotProxy(ASObject result)
-	{
-		Object proxyInit = result.get("proxyInitialized");
-		assertNotNull(proxyInit);
-		assertTrue((Boolean)proxyInit);
-	}
-	private void assertASObjectIsProxy(ASObject result)
-	{
-		Object proxyInit = result.get("proxyInitialized");
-		// In some cases, the proxyInitialized value isn't set on the ASOjbect, as it arrives as false by default on the client
-		if (proxyInit == null) return;
-		assertFalse((Boolean)proxyInit);
-	}
-	private void assertIsObjectFor(ASObject object,Class<?> objectType)
-	{
-		assertEquals(objectType.getName(),object.getType());
-	}
+	
 	private HibernateSerializer getSerializerForAuthor()
 	{
 		Author author = TestDataProvider.getAuthor();

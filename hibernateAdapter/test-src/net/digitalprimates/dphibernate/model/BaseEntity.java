@@ -8,6 +8,7 @@ import javax.persistence.Transient;
 
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 
+
 @MappedSuperclass
 public class BaseEntity implements IHibernateProxy
 {

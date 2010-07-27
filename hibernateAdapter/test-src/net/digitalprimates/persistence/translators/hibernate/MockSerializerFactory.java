@@ -5,6 +5,7 @@ import org.hibernate.SessionFactory;
 import net.digitalprimates.persistence.translators.IDeserializer;
 import net.digitalprimates.persistence.translators.ISerializer;
 import net.digitalprimates.persistence.translators.ISerializerFactory;
+import net.digitalprimates.persistence.translators.SerializerConfiguration;
 
 public class MockSerializerFactory implements ISerializerFactory
 {
@@ -38,6 +39,14 @@ public class MockSerializerFactory implements ISerializerFactory
 	{
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+
+	@Override
+	public void setDefaultConfiguration(SerializerConfiguration configuration)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }
