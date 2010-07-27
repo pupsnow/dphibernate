@@ -83,6 +83,7 @@ public class HibernateSerializer extends AbstractSerializer
 	{
 		super(source);
 		this.useAggressiveProxying = useAggressiveProxying;
+		this.cache = new DPHibernateCache();
 	}
 
 
@@ -98,12 +99,8 @@ public class HibernateSerializer extends AbstractSerializer
 		this.cache = cache;
 		this.sessionFactory = sessionFactory;
 	}
-	// TODO : MP - Why is this here?  Why not just instantiate a new one each time?
-	// DPHibernateCache is required to be decalred in Spring as 
-	// a prototype,
-	// Why not just instantiate a new Cache in the constructor?
-	@Resource
 	private DPHibernateCache cache;
+
 	@Resource
 	private SessionFactory sessionFactory;
 
