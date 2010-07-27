@@ -1,4 +1,4 @@
-package net.digitalprimates.dphibernate.test.util;
+package org.dphibernate.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

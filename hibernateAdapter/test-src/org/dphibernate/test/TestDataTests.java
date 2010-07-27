@@ -1,12 +1,11 @@
-package net.digitalprimates.persistence.hibernate.utils.services;
+package org.dphibernate.test;
 
 import static org.junit.Assert.*;
 
+import org.dphibernate.model.Publisher;
 import org.hibernate.collection.AbstractPersistentCollection;
 import org.junit.Test;
 
-import net.digitalprimates.dphibernate.model.Publisher;
-import net.digitalprimates.dphibernate.test.util.DbTestCase;
 
 /**
  * Tests which simply validate that the DbTestCase is setting things 

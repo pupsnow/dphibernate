@@ -1,6 +1,6 @@
-package net.digitalprimates.dphibernate.model;
+package org.dphibernate.model;
 
-import net.digitalprimates.persistence.annotations.NeverSerialize;
+import org.dphibernate.serialization.annotations.NeverSerialize;
 
 public class User
 {

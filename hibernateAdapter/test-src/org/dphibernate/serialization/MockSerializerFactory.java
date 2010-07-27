@@ -1,11 +1,11 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package org.dphibernate.serialization;
 
+import org.dphibernate.serialization.IDeserializer;
+import org.dphibernate.serialization.ISerializer;
+import org.dphibernate.serialization.ISerializerFactory;
+import org.dphibernate.serialization.SerializerConfiguration;
 import org.hibernate.SessionFactory;
 
-import net.digitalprimates.persistence.translators.IDeserializer;
-import net.digitalprimates.persistence.translators.ISerializer;
-import net.digitalprimates.persistence.translators.ISerializerFactory;
-import net.digitalprimates.persistence.translators.SerializerConfiguration;
 
 public class MockSerializerFactory implements ISerializerFactory
 {

@@ -1,16 +1,17 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package org.dphibernate.serialization;
 
-import static org.junit.Assert.*;
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import net.digitalprimates.dphibernate.model.Author;
-import net.digitalprimates.dphibernate.model.User;
 
+import org.dphibernate.model.Author;
+import org.dphibernate.model.User;
 import org.junit.Test;
 
 public class PropertyHelperTests

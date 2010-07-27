@@ -1,4 +1,4 @@
-package net.digitalprimates.dphibernate.model;
+package org.dphibernate.model;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -6,7 +6,8 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Transient;
 
-import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
+import org.dphibernate.core.IHibernateProxy;
+
 
 
 @MappedSuperclass

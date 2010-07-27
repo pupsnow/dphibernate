@@ -1,27 +1,24 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package org.dphibernate.adapters;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
-import java.util.List;
-
-import net.digitalprimates.persistence.hibernate.HibernateAdapter;
-import net.digitalprimates.persistence.hibernate.LoadDPProxyOperation;
-import net.digitalprimates.persistence.hibernate.SaveDPProxyOperation;
-
+import org.dphibernate.adapters.RemotingAdapter;
+import org.dphibernate.persistence.operations.SaveDPProxyOperation;
+import org.dphibernate.serialization.MockSerializerFactory;
+import org.dphibernate.serialization.operations.LoadDPProxyOperation;
 import org.junit.Before;
 import org.junit.Test;
 
 import flex.messaging.config.ConfigMap;
 
-public class HibernateAdapterTests
+public class RemotingAdapterTests
 {
 
-	HibernateAdapter adapter;
+	RemotingAdapter adapter;
 	@Before
 	public void setup()
 	{
-		adapter = new HibernateAdapter();
+		adapter = new RemotingAdapter();
 	}
 	@Test
 	public void testConfigLoadSaveMethodNamesOnAdapterOnly()

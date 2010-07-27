@@ -1,8 +1,8 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package org.dphibernate.serialization;
 
-import net.digitalprimates.dphibernate.model.Author;
-import net.digitalprimates.dphibernate.model.Book;
-import net.digitalprimates.dphibernate.model.Publisher;
+import org.dphibernate.model.Author;
+import org.dphibernate.model.Book;
+import org.dphibernate.model.Publisher;
 
 public class TestDataProvider
 {

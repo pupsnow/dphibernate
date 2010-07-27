@@ -1,4 +1,4 @@
-package net.digitalprimates.dphibernate.model;
+package org.dphibernate.model;
 
 import java.util.ArrayList;
 import java.util.List;

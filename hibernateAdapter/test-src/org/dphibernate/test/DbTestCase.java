@@ -1,11 +1,10 @@
-package net.digitalprimates.dphibernate.test.util;
+package org.dphibernate.test;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.List;
 
-import net.digitalprimates.dphibernate.model.BaseEntity;
 
 import org.dbunit.IDatabaseTester;
 import org.dbunit.JdbcDatabaseTester;
@@ -13,6 +12,7 @@ import org.dbunit.dataset.CompositeDataSet;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dphibernate.model.BaseEntity;
 import org.hibernate.Criteria;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;

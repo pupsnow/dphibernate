@@ -1,16 +1,18 @@
-package net.digitalprimates.persistence.translators.hibernate;
+package org.dphibernate.serialization;
 
+import static org.dphibernate.test.Assert.*;
 import static org.junit.Assert.*;
 
 import java.util.List;
 
-import net.digitalprimates.dphibernate.model.Author;
 
+import org.dphibernate.model.Author;
+import org.dphibernate.serialization.DPHibernateCache;
+import org.dphibernate.serialization.HibernateSerializer;
 import org.junit.Before;
 import org.junit.Test;
 
 import flex.messaging.io.amf.ASObject;
-import static net.digitalprimates.dphibernate.test.util.Assert.*;
 
 /**
  * The 'normal' situation is that we'd be serializing

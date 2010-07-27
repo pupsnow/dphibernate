@@ -1,4 +1,4 @@
-package net.digitalprimates.persistence.hibernate.utils.services;
+package org.dphibernate.services;
 
 import static ch.lambdaj.Lambda.having;
 import static ch.lambdaj.Lambda.on;
@@ -11,9 +11,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import net.digitalprimates.dphibernate.model.Book;
-import net.digitalprimates.dphibernate.test.util.DbTestCase;
 
+import org.dphibernate.model.Book;
+import org.dphibernate.services.ProxyBatchLoader;
+import org.dphibernate.services.ProxyLoadRequest;
+import org.dphibernate.services.ProxyLoadResult;
+import org.dphibernate.test.DbTestCase;
 import org.junit.Before;
 import org.junit.Test;
 

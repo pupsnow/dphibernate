@@ -1,4 +1,4 @@
-package net.digitalprimates.dphibernate.model;
+package org.dphibernate.model;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;

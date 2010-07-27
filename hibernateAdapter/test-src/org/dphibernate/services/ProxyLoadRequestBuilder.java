@@ -1,8 +1,10 @@
-package net.digitalprimates.persistence.hibernate.utils.services;
+package org.dphibernate.services;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.dphibernate.services.ProxyLoadRequest;
 
 
 public class ProxyLoadRequestBuilder
