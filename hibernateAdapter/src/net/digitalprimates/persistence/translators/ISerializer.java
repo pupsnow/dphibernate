@@ -26,4 +26,5 @@ package net.digitalprimates.persistence.translators;
 public interface ISerializer 
 {
 	Object serialize();
+	void configure(SerializerConfiguration configuration);
 }

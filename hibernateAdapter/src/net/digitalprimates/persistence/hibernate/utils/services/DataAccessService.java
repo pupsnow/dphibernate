@@ -2,6 +2,7 @@ package net.digitalprimates.persistence.hibernate.utils.services;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Resource;
@@ -52,6 +53,11 @@ public class DataAccessService implements IProxyUpdateService, IProxyLoadService
 	@Override
 	public Object loadBean(Class daoClass, Serializable id) {
 		return proxyLoadService.loadBean(daoClass, id);
+	}
+	@Override
+	public Map<String, Object> loadProperties(Class<?> daoClass, Serializable id)
+	{
+		return proxyLoadService.loadProperties(daoClass,id);
 	}
 	@Override
 	public List<ProxyLoadResult> loadProxyBatch(ProxyLoadRequest[] requests)

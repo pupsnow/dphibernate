@@ -1,6 +1,9 @@
 package net.digitalprimates.persistence.hibernate.utils.services;
 
 import java.io.Serializable;
+import java.util.Map;
+
+import net.digitalprimates.persistence.translators.hibernate.PropertyHelper;
 
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -35,5 +38,14 @@ public class ProxyLoadService implements IProxyLoadService
 		}
 		Object result = sessionFactory.getCurrentSession().get(daoClass, id);
 		return result;
+	}
+
+
+	@Override
+	public Map<String, Object> loadProperties(Class<?> daoClass, Serializable id)
+	{
+		Object bean = loadBean(daoClass, id);
+		Map<String,Object> properties = PropertyHelper.getProperties(bean);
+		return properties;
 	}
 }

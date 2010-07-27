@@ -10,6 +10,7 @@ import org.hibernate.cfg.Configuration;
 public class SimpleSerializationFactory implements ISerializerFactory
 {
 	protected SessionFactory sessionFactory;
+	private SerializerConfiguration defaultConfiguration;
 
 	public SimpleSerializationFactory()
 	{
@@ -35,6 +36,7 @@ public class SimpleSerializationFactory implements ISerializerFactory
 		DPHibernateCache cache = new DPHibernateCache();
 		SessionFactory sessionFactory = getSessionFactory();
 		HibernateSerializer hibernateSerializer = new HibernateSerializer(source, useAggressiveSerialization, cache, sessionFactory);
+		hibernateSerializer.configure(defaultConfiguration);
 		return hibernateSerializer;
 	}
 
@@ -62,6 +64,11 @@ public class SimpleSerializationFactory implements ISerializerFactory
 			System.err.println("Initial SessionFactory creation failed." + ex);
 			throw new ExceptionInInitializerError(ex);
 		}
+	}
+	@Override
+	public void setDefaultConfiguration(SerializerConfiguration configuration)
+	{
+		this.defaultConfiguration = configuration;
 	}
 
 }

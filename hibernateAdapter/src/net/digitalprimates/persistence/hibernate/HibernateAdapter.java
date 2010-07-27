@@ -78,9 +78,9 @@ public class HibernateAdapter extends JavaAdapter
 		addOperation(new LoadDPProxyOperation(loadMethodName));
 		addOperation(new SaveDPProxyOperation(saveMethodName));
 		addOperation(new LoadDPProxyBatchOperation(loadBatchMethodName));
-		logConfiguration();
 		initializeDefaultConfiguration();
 		initalizeSerializerFactory(dpHibernateProps);
+		logConfiguration();
 	}
 	
 

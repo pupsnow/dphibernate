@@ -39,6 +39,8 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	@Resource
 	private SessionFactory sessionFactory;
 	
+	private SerializerConfiguration defaultConfiguration;
+
 	@Override
 	public ISerializer getSerializer(Object source)
 	{
@@ -50,6 +52,7 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 		ServletContext ctx = FlexContext.getServletContext();
 		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
 		ISerializer serializer = (ISerializer) springContext.getBean("hibernateSerializerBean",new Object[]{source,useAggressiveSerialization});
+		serializer.configure(defaultConfiguration);
 		if (serializer == null)
 		{
 			throw new RuntimeException("bean named hibernateSerializerBean not found");
@@ -71,4 +74,10 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	{
 		return sessionFactory;
 	}
+	@Override
+	public void setDefaultConfiguration(SerializerConfiguration configuration)
+	{
+		this.defaultConfiguration = configuration;
+	}
+
 }

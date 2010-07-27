@@ -10,4 +10,5 @@ public interface ISerializerFactory
 	public IDeserializer getDeserializer();
 	
 	public SessionFactory getSessionFactory();
+	public void setDefaultConfiguration(SerializerConfiguration configuration);
 }

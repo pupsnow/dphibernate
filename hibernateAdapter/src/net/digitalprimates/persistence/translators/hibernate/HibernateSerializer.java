@@ -22,7 +22,6 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,9 +43,11 @@ import net.digitalprimates.persistence.annotations.NoLazyLoadOnSerialize;
 import net.digitalprimates.persistence.hibernate.proxy.HibernateProxyConstants;
 import net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy;
 import net.digitalprimates.persistence.translators.AbstractSerializer;
+import net.digitalprimates.persistence.translators.SerializerConfiguration;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.dphibernate.collections.PaginatedCollection;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -54,14 +55,12 @@ import org.hibernate.collection.AbstractPersistentCollection;
 import org.hibernate.collection.PersistentCollection;
 import org.hibernate.collection.PersistentMap;
 import org.hibernate.dialect.Dialect;
-import org.hibernate.dialect.MySQL5Dialect;
 import org.hibernate.event.EventSource;
 import org.hibernate.impl.SessionFactoryImpl;
 import org.hibernate.persister.collection.AbstractCollectionPersister;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.sql.SimpleSelect;
-import org.hibernate.transform.PassThroughResultTransformer;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.type.StringType;
 import org.hibernate.type.Type;
@@ -101,12 +100,12 @@ public class HibernateSerializer extends AbstractSerializer
 		this.cache = cache;
 		this.sessionFactory = sessionFactory;
 	}
-
-	// private HashMap cache = new HashMap();
-	// private ArrayList alreadyTouched = new ArrayList();
+	// TODO : MP - Why is this here?  Why not just instantiate a new one each time?
+	// DPHibernateCache is required to be decalred in Spring as 
+	// a prototype,
+	// Why not just instantiate a new Cache in the constructor?
 	@Resource
 	private DPHibernateCache cache;
-
 	@Resource
 	private SessionFactory sessionFactory;
 
@@ -185,7 +184,7 @@ public class HibernateSerializer extends AbstractSerializer
 	private Object writeBean(Object objectToSerialize, Object cacheKey, boolean eagerlySerialize)
 	{
 		Object result = null;
-
+		// TODO : This should use a strategy pattern.
 		if (isLazyProxy(objectToSerialize) && !eagerlySerialize)
 		{
 			result = writeHibernateProxy((HibernateProxy) objectToSerialize, cacheKey);
@@ -272,7 +271,9 @@ public class HibernateSerializer extends AbstractSerializer
 			asObject.setType(getClassName(obj));
 			asObject.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
 			asObject.put(HibernateProxyConstants.PROXYINITIALIZED, true);
-
+			
+			// TODO : This chunk of code is being progressively moved to PropertyHelper.java
+			// However, we need better test coverage of this method before I'm comfortable just ripping it out
 			BeanInfo info = Introspector.getBeanInfo(obj.getClass());
 			for (PropertyDescriptor pd : info.getPropertyDescriptors())
 			{
@@ -280,10 +281,10 @@ public class HibernateSerializer extends AbstractSerializer
 				Method readMethod = pd.getReadMethod();
 				if (readMethod == null)
 					continue;
-				boolean explicitlyFetch = methodHasAnnotation(readMethod, NoLazyLoadOnSerialize.class);
+				boolean explicitlyFetch = PropertyHelper.methodHasAnnotation(readMethod, NoLazyLoadOnSerialize.class);
 				if (explicitlyFetch)
 					continue;
-				if (propertyNameIsExcluded(propName))
+				if (PropertyHelper.propertyNameIsExcluded(propName))
 				{
 					continue;
 				}
@@ -296,14 +297,14 @@ public class HibernateSerializer extends AbstractSerializer
 						continue;
 					}
 					Object serializedValue;
-					if (methodHasAnnotation(readMethod, AggressivelyProxy.class))
+					if (PropertyHelper.methodHasAnnotation(readMethod, AggressivelyProxy.class))
 					{
 						HibernateSerializer aggressiveSerializer = new HibernateSerializer(val, true, cache, sessionFactory);
 						aggressiveSerializer.permitAgressiveProxyingOnRoot = true;
 						serializedValue = aggressiveSerializer.serialize();
 					} else
 					{
-						boolean eagerlySerialize = methodHasAnnotation(readMethod, EagerlySerialize.class);
+						boolean eagerlySerialize = PropertyHelper.methodHasAnnotation(readMethod, EagerlySerialize.class);
 						serializedValue = serialize(val, eagerlySerialize);
 					}
 					asObject.put(propName, serializedValue);
@@ -325,18 +326,13 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
-	private boolean methodHasAnnotation(Method readMethod, Class<? extends Annotation> annotation)
-	{
-		return readMethod.getAnnotation(annotation) != null;
-	}
+	
 
 
 	private Object writeCollection(Collection<?> collection, Object key)
 	{
-		Object result;
-		ArrayList list = new ArrayList();
-		// cache.put(key, list);
-
+		List list = new ArrayList();
+		boolean isPaginated = false;
 		for (Object collectionMemeber : collection)
 		{
 			Object translatedCollectionMember;
@@ -344,14 +340,24 @@ public class HibernateSerializer extends AbstractSerializer
 			if (getPageSize() != -1 && list.size() > getPageSize())
 			{
 				translatedCollectionMember = getPagedCollectionProxy(collectionMemeber, collectionMemeberCacheKey);
+				isPaginated = true;
 			} else
 			{
 				translatedCollectionMember = serialize(collectionMemeber);
 			}
 			list.add(translatedCollectionMember);
 		}
-		result = list;
-		return result;
+		if (isPaginated)
+		{
+//			list = convertToPaginatedList(list);
+		}
+		return list;
+	}
+
+
+	private List convertToPaginatedList(List list)
+	{
+		return new PaginatedCollection(list);
 	}
 
 
@@ -694,7 +700,7 @@ public class HibernateSerializer extends AbstractSerializer
 				Method readMethod = pd.getReadMethod();
 				if (readMethod == null)
 					continue;
-				if (propertyNameIsExcluded(propName))
+				if (PropertyHelper.propertyNameIsExcluded(propName))
 				{
 					continue;
 				}
@@ -710,10 +716,7 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
-	private boolean propertyNameIsExcluded(String propName)
-	{
-		return propName.equals("handler") || propName.equals("class") || propName.equals("hibernateLazyInitializer");
-	}
+	
 
 
 	public void setCache(DPHibernateCache cache)
@@ -749,5 +752,12 @@ public class HibernateSerializer extends AbstractSerializer
 	public boolean isUsingAggressiveProxying()
 	{
 		return useAggressiveProxying;
+	}
+
+
+	@Override
+	public void configure(SerializerConfiguration configuration)
+	{
+		this.pageSize = configuration.getPageSize();
 	}
 }
