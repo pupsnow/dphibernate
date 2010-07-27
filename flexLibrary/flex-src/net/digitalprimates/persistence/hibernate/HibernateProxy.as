@@ -21,6 +21,7 @@ package net.digitalprimates.persistence.hibernate
 {
 	import flash.utils.flash_proxy;
 	
+	import mx.rpc.AsyncToken;
 	import mx.utils.ObjectProxy;
 	import mx.utils.object_proxy;
 

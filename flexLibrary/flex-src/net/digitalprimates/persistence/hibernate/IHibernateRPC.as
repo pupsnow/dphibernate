@@ -23,6 +23,9 @@ package net.digitalprimates.persistence.hibernate
 	
 	public interface IHibernateRPC
 	{
+		function get stateTrackingEnabled() : Boolean;
+		function set stateTrackingEnabled( value : Boolean ) : void;
 		function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken;
+		function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken;
 	}
 }

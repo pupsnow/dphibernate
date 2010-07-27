@@ -18,11 +18,18 @@
 
 package net.digitalprimates.persistence.hibernate;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
-import net.digitalprimates.persistence.translators.SerializationFactory;
+import net.digitalprimates.persistence.hibernate.utils.HibernateUtil;
+import net.digitalprimates.persistence.translators.ISerializer;
+import net.digitalprimates.persistence.translators.ISerializerFactory;
+import net.digitalprimates.persistence.translators.SerializerConfiguration;
+import net.digitalprimates.persistence.translators.SimpleSerializationFactory;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import flex.messaging.Destination;
 import flex.messaging.config.ConfigMap;
@@ -33,21 +40,25 @@ import flex.messaging.services.remoting.adapters.JavaAdapter;
 @SuppressWarnings("unchecked")
 public class HibernateAdapter extends JavaAdapter
 {
-	// private String scope = "request";
+	private static final Log log = LogFactory.getLog(HibernateAdapter.class);
+	
 	protected Destination destination;
+	private static final String DEFAULT_LOAD_BATCH_METHOD_NAME = "loadProxyBatch";
+	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
+	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
+	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
+	private String loadMethodName;
+	private String saveMethodName;
+	private String loadBatchMethodName;
+	private int pageSize;
+	private HashMap<Class<? extends DPHibernateOperation>,DPHibernateOperation> operations;
+	private ISerializerFactory serializerFactory;
+	private SerializerConfiguration defaultConfiguration;
 
-	/*
-	 * static {
-	 * PropertyProxyRegistry.getRegistry().register(HibernateProxy.class, new
-	 * HibernateLazyPropertyProxy());
-	 * PropertyProxyRegistry.getRegistry().register(AbstractPersistentCollection.class,
-	 * new HibernateLazyCollectionProxy()); }
-	 */
-
-	private String property_hibernateSessionFactoryClass = "";// "net.digitalprimates.persistence.hibernate.tools.HibernateFactory";
-	private String property_getCurrentSessionMethod = "";// "getCurrentSession";
-	private String property_loadMethod = "";// "load";
-
+	public HibernateAdapter()
+	{
+		super();
+	}
 
 	/**
 	 * Initialize the adapter properties from the flex services-config.xml file
@@ -58,43 +69,93 @@ public class HibernateAdapter extends JavaAdapter
 		if (properties == null || properties.size() == 0)
 			return;
 
-		// properties.getProperty("hibernateFactory");
-		ConfigMap adapterProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-		ConfigMap adapterHibernateProps = adapterProps.getPropertyAsMap("sessionFactory", new ConfigMap());
-		property_hibernateSessionFactoryClass = adapterHibernateProps.getPropertyAsString("class", property_hibernateSessionFactoryClass);
-		property_getCurrentSessionMethod = adapterHibernateProps.getPropertyAsString("getCurrentSessionMethod", property_getCurrentSessionMethod);
-
-		ConfigMap destProps = properties.getPropertyAsMap("hibernate", new ConfigMap());
-		property_loadMethod = destProps.getPropertyAsString("loadMethod", property_loadMethod);
+		initalizeOperations();
+		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
+		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
+		loadBatchMethodName = dpHibernateProps.getPropertyAsString("loadBatchMethod", getDefaultLoadBatchMethodName());
+		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
+		pageSize = dpHibernateProps.getPropertyAsInt("pageSize", getDefaultPageSize());
+		addOperation(new LoadDPProxyOperation(loadMethodName));
+		addOperation(new SaveDPProxyOperation(saveMethodName));
+		addOperation(new LoadDPProxyBatchOperation(loadBatchMethodName));
+		initializeDefaultConfiguration();
+		initalizeSerializerFactory(dpHibernateProps);
+		logConfiguration();
 	}
+	
 
-
-	/**
-	 * Store the adapter properties in the local properties object
-	 * 
-	 * @param destination
-	 * @param adapterSettings
-	 * @param destinationSettings
-	 * 
-	 * public void setSettings(Destination destination, AdapterSettings
-	 * adapterSettings, DestinationSettings destinationSettings) {
-	 * //super.setSettings(destination, adapterSettings, destinationSettings);
-	 *  // Second, initialize adapter level properties PropertiesSettings
-	 * properties = adapterSettings; properties(properties);
-	 *  // Third, initialize destination level properties properties =
-	 * destinationSettings; properties(properties); }
-	 * 
-	 * 
-	 * 
-	 * protected void properties(PropertiesSettings propertiesSettings) {
-	 * super.properties(propertiesSettings); }
-	 */
-
-	private String getLoadMethodName()
+	private void initializeDefaultConfiguration()
 	{
-		return property_loadMethod;
+		defaultConfiguration = new SerializerConfiguration(pageSize);
 	}
 
+	private String getDefaultLoadBatchMethodName()
+	{
+		return (loadBatchMethodName != null) ? loadBatchMethodName : DEFAULT_LOAD_BATCH_METHOD_NAME;
+	}
+
+	private void addOperation(DPHibernateOperation operation)
+	{
+		operations.put(operation.getClass(), operation);
+	}
+
+	private void initalizeOperations()
+	{
+		if (operations == null)
+		{
+			operations = new HashMap<Class<? extends DPHibernateOperation>, DPHibernateOperation>();
+		}
+	}
+
+	private String getDefaultSaveMethodName()
+	{
+		return (saveMethodName != null) ? saveMethodName : DEFAULT_SAVE_METHOD_NAME; 
+	}
+	
+	private int getDefaultPageSize()
+	{
+		return (pageSize != -1) ? pageSize : -1;  
+	}
+
+	private String getDefaultLoadMethodName()
+	{
+		return (loadMethodName != null) ? loadMethodName : DEFAULT_LOAD_METHOD_NAME;
+	}
+
+	private void logConfiguration()
+	{
+		log.debug("dpHibernate loadMethodName: " + loadMethodName);
+		log.debug("dpHibernate saveMethodName: " + saveMethodName);
+		String serializerFactoryName = (serializerFactory != null) ? serializerFactory.getClass().getCanonicalName() : "undefined";
+		log.debug("dpHibernate serializerFactory: " + serializerFactoryName);
+	}
+
+	private void initalizeSerializerFactory(ConfigMap adapterProps)
+	{
+		String serializationFactoryClassName = adapterProps.getPropertyAsString("serializerFactory", null);
+		if (serializerFactory != null && serializationFactoryClassName == null)
+		{
+			// The configuration did not specify an overriding SerializerFactory, and
+			// we already have one configured, so exit now.
+			return;
+		}
+		if (serializationFactoryClassName == null)
+		{
+			serializationFactoryClassName = DEFAULT_SERIALZIER_FACTORY_CLASSNAME;
+		}
+		Class<ISerializerFactory> serializationFactoryClass;
+		try
+		{
+			serializationFactoryClass = (Class<ISerializerFactory>) Class.forName(serializationFactoryClassName);
+			serializerFactory = serializationFactoryClass.newInstance();
+			serializerFactory.setDefaultConfiguration(defaultConfiguration);
+			HibernateUtil.setSerializerFactory(serializerFactory);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	}
 
 	public Object superInvoke(Message message)
 	{
@@ -114,27 +175,12 @@ public class HibernateAdapter extends JavaAdapter
 			// RemotingDestinationControl remotingDestination =
 			// (RemotingDestinationControl)this.getControl().getParentControl();//destination;
 			RemotingMessage remotingMessage = (RemotingMessage) message;
-
-			// re-map our special "loadDpProxy" to the user defined hibernate
-			// load method.
-			if ("loadDPProxy".equals(remotingMessage.getOperation()))
+			
+			for (DPHibernateOperation operation : operations.values())
 			{
-				try
+				if (operation.appliesForMessage(remotingMessage))
 				{
-					remotingMessage.setOperation(getLoadMethodName());
-					List paramArray = remotingMessage.getParameters();
-					List args = new ArrayList();
-
-					args.add(Class.forName(paramArray.get(1).getClass().getName()));
-					args.add(paramArray.get(0));
-
-					remotingMessage.setParameters(args);
-				} catch (ClassNotFoundException ex)
-				{
-					ex.printStackTrace();
-				} catch (Exception ex)
-				{
-					ex.printStackTrace();
+					operation.execute(remotingMessage);
 				}
 			}
 
@@ -145,14 +191,14 @@ public class HibernateAdapter extends JavaAdapter
 			 * their mxml // note: This can be turned off at the desination
 			 * level by defined a <source/> other then "*" try { FactoryInstance
 			 * factoryInstance = remotingDestination.getFactoryInstance();
-			 * String className = factoryInstance.getSource();
-			 *  // check for * wildcard in destination, and if exists use source
-			 * defined in mxml if( "*".equals(className) ) { sourceClass =
+			 * String className = factoryInstance.getSource(); // check for *
+			 * wildcard in destination, and if exists use source defined in mxml
+			 * if( "*".equals(className) ) { sourceClass =
 			 * remotingMessage.getSource();
 			 * factoryInstance.setSource(sourceClass); } }catch( Throwable ex ){
 			 * ex.printStackTrace();}
 			 */
-			System.out.println("{operation})****************" +remotingMessage.getOperation());
+			System.out.println("{operation})****************" + remotingMessage.getOperation());
 			// Deserialize the incoming object data
 			List inArgs = remotingMessage.getParameters();
 			if (inArgs != null && inArgs.size() > 0)
@@ -160,10 +206,10 @@ public class HibernateAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-						Object o = SerializationFactory.getDeserializer(SerializationFactory.HIBERNATESERIALIZER).translate(this, (RemotingMessage) remotingMessage.clone(), getLoadMethodName(), property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, inArgs);
-						remotingMessage.setParameters((List) o);
+					Object o = serializerFactory.getDeserializer().translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
+					remotingMessage.setParameters((List) o);
 					long e1 = new Date().getTime();
-					System.out.println("{deserialize} " +(e1-s1));
+					System.out.println("{deserialize} " + (e1 - s1));
 					// remotingMessage.setBody(body);
 				} catch (Exception ex)
 				{
@@ -177,18 +223,20 @@ public class HibernateAdapter extends JavaAdapter
 			}
 
 			long s2 = new Date().getTime();
-				// invoke the user class.method()
-				results = super.invoke(remotingMessage);
+			// invoke the user class.method()
+			results = super.invoke(remotingMessage);
 			long e2 = new Date().getTime();
-			System.out.println("{invoke} " +(e2-s2));
+			System.out.println("{invoke} " + (e2 - s2));
 
 			// serialize the result out
 			try
 			{
 				long s3 = new Date().getTime();
-					results = SerializationFactory.getSerializer(SerializationFactory.HIBERNATESERIALIZER).translate(property_hibernateSessionFactoryClass, property_getCurrentSessionMethod, results);
+				ISerializer serializer = serializerFactory.getSerializer(results);
+				
+				results = serializer.serialize();
 				long e3 = new Date().getTime();
-				System.out.println("{serialize} " +(e3-s3));
+				System.out.println("{serialize} " + (e3 - s3));
 			} catch (Exception ex)
 			{
 				ex.printStackTrace();
@@ -201,6 +249,11 @@ public class HibernateAdapter extends JavaAdapter
 		}
 
 		return results;
+	}
+
+	public <T extends DPHibernateOperation> T getOperation(Class<T> operationClass)
+	{
+		return (T) operations.get(operationClass);
 	}
 
 }

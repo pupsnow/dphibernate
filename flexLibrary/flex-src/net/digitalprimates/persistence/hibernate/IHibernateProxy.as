@@ -19,8 +19,9 @@
 
 package net.digitalprimates.persistence.hibernate
 {
-	import flash.events.IEventDispatcher;
-	
+	import mx.rpc.AsyncToken;
+	import mx.rpc.IResponder;
+
 	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.proxy.IHibernateProxy")]
 	public interface IHibernateProxy
 	{

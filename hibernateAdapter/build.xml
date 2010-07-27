@@ -1,0 +1,5 @@
+<project name="dpHibernate">
+	<!-- the build file for dpHibernate is called build-jar.xml for legacy purposes.
+	This file exists to conform to ant conventions -->
+	<import file="build-jar.xml"/>
+</project>

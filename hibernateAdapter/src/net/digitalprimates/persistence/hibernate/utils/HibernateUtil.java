@@ -20,11 +20,12 @@ package net.digitalprimates.persistence.hibernate.utils;
 
 import java.sql.SQLException;
 
+import net.digitalprimates.persistence.translators.ISerializerFactory;
+
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
 
 /**
  * A utility class to help you manage your Hibernate sessions
@@ -35,35 +36,18 @@ import org.hibernate.cfg.Configuration;
 public class HibernateUtil
 {
 
-    private static final SessionFactory sessionFactory;
-
+//    private static SessionFactory sessionFactory;
+	
+	private static ISerializerFactory serializerFactory;
     public static final ThreadLocal<Session> threadSession = new ThreadLocal<Session>();
 
     public static final ThreadLocal<Transaction> threadTransaction = new ThreadLocal<Transaction>();
 
-    static
-    {
-        try
-        {
-            // Create the SessionFactory
-            sessionFactory = new Configuration().configure().buildSessionFactory();
-        }
-        catch (Throwable ex)
-        {
-            // Make sure you log the exception, as it might be swallowed
-            System.err.println("Initial SessionFactory creation failed." + ex);
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
-
-
     public static SessionFactory getSessionFactory() throws HibernateException
     {
-    	return sessionFactory;
+    	return serializerFactory.getSessionFactory();
     }
-    
-    
-    public static Session getCurrentSession() throws HibernateException
+	public static Session getCurrentSession() throws HibernateException
     {
     	return getCurrentSession(false);
     }
@@ -80,7 +64,7 @@ public class HibernateUtil
         // Open a new Session, if this Thread has none yet
         if (s == null)
         {
-            s = sessionFactory.openSession();
+            s = getSessionFactory().openSession();
             threadSession.set(s);
         }
         return s;
@@ -111,6 +95,15 @@ public class HibernateUtil
         if (tx == null)
         {
             tx = getCurrentSession().beginTransaction();
+            threadTransaction.set(tx);
+        }
+    }
+    public static void beginTransaction(Session session)
+    {
+    	Transaction tx = threadTransaction.get();
+        if (tx == null)
+        {
+            tx = session.beginTransaction();
             threadTransaction.set(tx);
         }
     }
@@ -149,4 +142,15 @@ public class HibernateUtil
         }
 
     }
+
+	public static void setSerializerFactory(ISerializerFactory serializerFactory)
+	{
+		HibernateUtil.serializerFactory = serializerFactory;
+	}
+
+
+	public static ISerializerFactory getSerializerFactory()
+	{
+		return serializerFactory;
+	}
 }

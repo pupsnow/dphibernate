@@ -26,8 +26,8 @@ package net.digitalprimates.persistence.hibernate.proxy;
  */
 public class HibernateProxy implements IHibernateProxy 
 {	
-	public Object proxyKey;
-	public Boolean proxyInitialized = true;
+	private Object proxyKey;
+	private Boolean proxyInitialized = true;
 
 	
 	public Object getProxyKey() 
@@ -40,6 +40,7 @@ public class HibernateProxy implements IHibernateProxy
 	{
 		this.proxyKey = proxyKey;
 	}
+	
 
 	
 	public Boolean getProxyInitialized() 
