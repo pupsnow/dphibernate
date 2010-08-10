@@ -1,8 +1,6 @@
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant"
 	xmlns:ivy="antlib:org.apache.ivy.ant">
-	<taskdef name="ivyeclipse" classname="org.apache.ivy.ant.EclipseClasspath" classpath="build/libs/ivy-eclipse.jar"/>	
-	<ivy:settings file="build/includes/ivysettings.xml" />
-	<property name="ivy.install.version" value="2.1.0-rc2" />
+	<property name="ivy.install.version" value="2.2.0-rc1" />
 	<condition property="ivy.home" value="${env.IVY_HOME}">
 		<isset property="env.IVY_HOME" />
 	</condition>
@@ -32,21 +30,21 @@
 		-->
 		<path id="ivy.lib.path">
 			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
-
 		</path>
 		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant"
 			classpathref="ivy.lib.path" />
 	</target>
 	
 	<target name="resolve" description="--> retrieve dependencies with ivy" depends="init-ivy">
+		<ivy:settings file="build/includes/ivysettings.xml" />
         <ivy:retrieve sync="true" type="jar" />
     </target>
-	
+	<!--
 	<target name="eclipse" description="Updates eclipse classpath.">
 	    <ivy:configure settingsId="ivy.eclipse" override="true" />
 	    <ivy:resolve settingsRef="ivy.eclipse" />
 	    <ivyeclipse settingsRef="ivy.eclipse" />
 	</target>
-
+	-->
 </project>
     
