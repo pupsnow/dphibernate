@@ -2,15 +2,13 @@ package org.dphibernate.persistence.interceptors;
 
 import java.security.Principal;
 
-
 import org.apache.commons.lang.StringUtils;
 import org.dphibernate.core.IHibernateProxy;
-import org.dphibernate.persistence.interceptors.IPasswordEncryptionInterceptor;
 import org.dphibernate.persistence.state.IProxyResolver;
 import org.dphibernate.persistence.state.ObjectChangeMessage;
 import org.dphibernate.persistence.state.PropertyChangeMessage;
 import org.hibernate.SessionFactory;
-import org.springframework.security.providers.encoding.PasswordEncoder;
+import org.springframework.security.authentication.encoding.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ReflectionUtils;
 

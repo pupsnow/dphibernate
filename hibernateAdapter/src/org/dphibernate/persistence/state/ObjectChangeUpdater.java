@@ -12,20 +12,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.annotation.Resource;
-
 
 import org.dphibernate.core.IHibernateProxy;
 import org.dphibernate.persistence.interceptors.IChangeMessageInterceptor;
 import org.dphibernate.serialization.DPHibernateCache;
 import org.hibernate.SessionFactory;
-import org.hibernate.TransactionException;
 import org.hibernate.TypeMismatchException;
-import org.springframework.security.Authentication;
-import org.springframework.security.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
