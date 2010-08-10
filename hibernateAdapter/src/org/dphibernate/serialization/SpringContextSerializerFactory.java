@@ -61,7 +61,14 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	@Override
 	public IDeserializer getDeserializer()
 	{
-		return new HibernateDeserializer();
+		ServletContext ctx = FlexContext.getServletContext();
+		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
+		IDeserializer deserializer = (IDeserializer) springContext.getBean("hibernateDeserializerBean");
+		if (deserializer == null)
+		{
+			deserializer = new HibernateDeserializer();
+		}
+		return deserializer;
 	}
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
