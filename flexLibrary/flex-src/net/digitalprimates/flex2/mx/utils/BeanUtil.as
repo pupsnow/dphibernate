@@ -1,5 +1,7 @@
 package net.digitalprimates.flex2.mx.utils
 {
+	import com.hexagonstar.util.debug.StopWatch;
+	
 	import flash.utils.Dictionary;
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
@@ -8,6 +10,7 @@ package net.digitalprimates.flex2.mx.utils
 	import mx.utils.DescribeTypeCache;
 	import mx.utils.ObjectUtil;
 	
+	import net.digitalprimates.persistence.hibernate.HibernateBean;
 	import net.digitalprimates.persistence.hibernate.HibernateManaged;
 	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
 	import net.digitalprimates.persistence.hibernate.IHibernateRPC;
@@ -16,36 +19,54 @@ package net.digitalprimates.flex2.mx.utils
 	public class BeanUtil
 	{
 		protected static var accesssorTypeMap:Dictionary = new Dictionary();
+		
+		private static function populateBeanPropertiesFromMap( map : Object , bean : Object , parent : Object ) : void
+		{
+			if ( bean is IHibernateProxy ) {
+				HibernateManaged.manageHibernateObject( bean as IHibernateProxy, parent );				
+			}
+			for ( var propertyName:String in map )
+			{
+				try {
+					bean[propertyName] = map[ propertyName ];
+				} catch ( error : Error )
+				{
+					trace ("Could not set property " + propertyName + " on " + getQualifiedClassName(bean));
+				}
+			}
+		}
 
-		public static function populateBean( genericObj:Object, 
+		public static function populateBean( source:Object, 
 												classDefinition:Class, 
 												existingBean:Object=null, 
-												dictionary:Dictionary=null,
-												parent:Object=null,
-												parentProperty:String=null, 
-												ro:IHibernateRPC=null ):Object {			
+												recursionDict:Dictionary=null,
+												parent:Object=null
+												):void {
 			var bean:Object;
 			var classInfo:XML;
 			var accessors:XMLList;
-
-			if ( !genericObj ) {
-				return null;
+//			populateBeanPropertiesFromMap( genericObj , existingBean , parent );
+//			return;
+			
+			if ( !source ) {
+				return;
 			}
 
-			if ( !dictionary ) {
-				dictionary = new Dictionary( true );
+			if ( !recursionDict ) {
+				recursionDict = new Dictionary( true );
 			}
 
-			if ( dictionary[ genericObj ] == true ) {
-				return genericObj;
+			if ( recursionDict[ source ] == true ) {
+				return;
 			}
 
-			dictionary[ genericObj ] = true;
+			recursionDict[ source ] = true;
 			
 			if ( CustomBeanPopulatorRegistry.containsPopulatorForClass( classDefinition ) )
 			{
 				var populator : IBeanPopulator = CustomBeanPopulatorRegistry.getPopulator( classDefinition );
-				return populator.populateBean( genericObj , classDefinition , existingBean , dictionary , parent , parentProperty , ro );
+				populator.populateBean( source , classDefinition , existingBean , recursionDict , parent );
+				return;
 			}
 			if ( accesssorTypeMap[ classDefinition ] == null ) {
 				classInfo = DescribeTypeCache.describeType( classDefinition ).typeDescription;
@@ -67,25 +88,26 @@ package net.digitalprimates.flex2.mx.utils
 				if ( name.indexOf( "::I" ) == -1 ) {
 					bean = new classDefinition();
 				} else {
-					return genericObj;
+					return;
 				}
 			}
 
 			if ( bean is IHibernateProxy ) {
-				HibernateManaged.manageHibernateObject( bean as IHibernateProxy, parent, parentProperty, ro as IHibernateRPC );				
+				HibernateManaged.manageHibernateObject( bean as IHibernateProxy, parent );
+				HibernateManaged.manageChildTree( bean );
 			}
 
-			if ( ( genericObj is IHibernateProxy ) && ( bean is IHibernateProxy ) ) {
-				IHibernateProxy( bean ).proxyInitialized = IHibernateProxy( genericObj ).proxyInitialized;
-				IHibernateProxy( bean ).proxyKey = IHibernateProxy( genericObj ).proxyKey;				
+			if ( ( source is IHibernateProxy ) && ( bean is IHibernateProxy ) ) {
+				IHibernateProxy( bean ).proxyInitialized = IHibernateProxy( source ).proxyInitialized;
+				IHibernateProxy( bean ).proxyKey = IHibernateProxy( source ).proxyKey;				
 			} 
 
-			if ( genericObj is IHibernateProxy ) {
-				if ( !IHibernateProxy( genericObj ).proxyInitialized ) {
+			if ( source is IHibernateProxy ) {
+				if ( !IHibernateProxy( source ).proxyInitialized ) {
 					//if we are not initialized, do not dive any deeper, you will cause Hibernate to lazy load by any of these
 					//actions
 
-					return bean;
+					return;
 				}
 			} 
 			
@@ -95,35 +117,35 @@ package net.digitalprimates.flex2.mx.utils
 				type = accessors[i].@type;
 				access = accessors[i].@access;
 				
-				if ( genericObj.hasOwnProperty( property ) && ( access != "readonly" ) ) {
+				if ( source.hasOwnProperty( property ) && ( access != "readonly" ) ) {
 					if ( type == 'Date' ) {
-						if ( genericObj[ property ] is Date ) {
-							bean[ property ] = new Date( ( genericObj[ property ] as Date ).getTime() );									
+						if ( source[ property ] is Date ) {
+							bean[ property ] = new Date( ( source[ property ] as Date ).getTime() );									
 						} else {
-							bean[ property ] = new Date( genericObj[ property ] );
+							bean[ property ] = new Date( source[ property ] );
 						}
 					} else {
 						var beanHelper:BeanHelper = getBeanInformation( accessors[i] );
 						
 						if ( beanHelper.isSimple ) {
-							bean[ property ] = genericObj[ property ];
+							bean[ property ] = source[ property ];
 						} else if ( beanHelper.isArray ) {
 							bean[ property ] = new Array();
 
-							for ( var j:int=0; j<genericObj[ property ].length; j++ ) {
-								bean[ property ].push( populateBean( genericObj[ property ][ j ], beanHelper.elementClass, null, dictionary ) );
+							for ( var j:int=0; j<source[ property ].length; j++ ) {
+								bean[ property ].push( populateBean( source[ property ][ j ], beanHelper.elementClass, null, recursionDict ) );
 							}
 						} else if ( beanHelper.elementClass ) {
 							if ( beanHelper.elementClass is ICollectionView ) {
 								trace('here');
 							}
 							if ( property != 'list' ) {
-								bean[ property ] = populateBean( genericObj[ property ], beanHelper.elementClass, null, dictionary, bean, property, ro );
+								bean[ property ] = source[ property ] //populateBean( source[ property ], beanHelper.elementClass, null, recursionDict, bean );
 							} else {
 								//trace("break here");
 							}
 						} else {								
-							bean[ property ] = ObjectUtil.copy( genericObj[ property ] );
+							bean[ property ] = source[ property ] //ObjectUtil.copy( source[ property ] );
 						}
 					}
 				}
@@ -133,7 +155,6 @@ package net.digitalprimates.flex2.mx.utils
 				//trace("STOP!");
 			}
 
-			return bean;
 		}
 
 		protected static function getBeanInformation( accessor:XML ):BeanHelper {

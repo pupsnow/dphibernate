@@ -27,5 +27,8 @@ package net.digitalprimates.persistence.hibernate
 		function set stateTrackingEnabled( value : Boolean ) : void;
 		function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken;
 		function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken;
+		
+		function get enabled():Boolean;
+		function set enabled(value:Boolean):void;
 	}
 }

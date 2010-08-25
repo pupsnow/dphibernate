@@ -47,6 +47,15 @@ package net.digitalprimates.persistence.hibernate.rpc
 		private var log : ILogger = LogUtil.getLogger( this );
 		private var loadingProxies:Object = new Object();
 		
+		private var _enabled:Boolean = true;
+		public function get enabled():Boolean
+		{
+			return _enabled;
+		}
+		public function set enabled(value:Boolean):void
+		{
+			_enabled = value;
+		}
 		public var operationBufferFactory:IOperationBufferFactory;
 		
 		/**
@@ -80,7 +89,7 @@ package net.digitalprimates.persistence.hibernate.rpc
 
 		private function bufferOperation(operation:AbstractOperation):void
 		{
-			if (!operationBufferFactory || !bufferRequests)
+			if (!operationBufferFactory || !bufferProxyLoadRequests)
 				return;
 
 			var buffer:IOperationBuffer = operationBufferFactory.getBuffer(this,operation);
@@ -100,7 +109,7 @@ package net.digitalprimates.persistence.hibernate.rpc
 				return getTokenForLoadingProxy(qualifiedProxyKey);
 			}
 			
-        	log.info( "Reuqesting proxy for {0} id: {1}" , className , proxyKey );
+        	log.info( "Hydrating proxy {0} id: {1}" , className , proxyKey );
         	var remoteClassName : String = ClassUtils.getRemoteClassName( hibernateProxy );
             var token : AsyncToken = this.loadDPProxy(proxyKey, remoteClassName);
 			token.addResponder(new Responder(onProxyLoadComplete,onProxyLoadFault));
@@ -138,11 +147,11 @@ package net.digitalprimates.persistence.hibernate.rpc
         {
             var token:AsyncToken;
 
-            HibernateManaged.disableServerCalls(this);
+            enabled = false;
             token = getOperation(getLocalName(name)).send.apply(null, args);
 
             HibernateManaged.addHibernateResponder(this, token);
-            HibernateManaged.enableServerCalls(this);
+            enabled = true;
 
             return token;
         }
@@ -158,14 +167,14 @@ package net.digitalprimates.persistence.hibernate.rpc
 		}
 		
 		private var _bufferRequests:Boolean;
-		public function get bufferRequests():Boolean
+		public function get bufferProxyLoadRequests():Boolean
 		{
 			return _bufferRequests;
 		}
-		public function set bufferRequests(value:Boolean):void
+		public function set bufferProxyLoadRequests(value:Boolean):void
 		{
 			_bufferRequests = value;
-			if ( bufferRequests && operationBufferFactory == null )
+			if ( bufferProxyLoadRequests && operationBufferFactory == null )
 			{
 				// Initalize with default;
 				operationBufferFactory = new LoadDPProxyOperationBufferFactory();

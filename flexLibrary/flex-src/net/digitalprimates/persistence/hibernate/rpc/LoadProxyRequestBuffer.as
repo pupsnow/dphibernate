@@ -1,5 +1,7 @@
 package net.digitalprimates.persistence.hibernate.rpc
 {
+	import com.hexagonstar.util.debug.StopWatch;
+	
 	import flash.events.TimerEvent;
 	import flash.utils.Proxy;
 	import flash.utils.Timer;
@@ -144,12 +146,18 @@ package net.digitalprimates.persistence.hibernate.rpc
 		private function batchLoadCompleted(event:ResultEvent):void
 		{
 			var loadResults:ArrayCollection = event.result as ArrayCollection;
+			trace("Processing result of " + loadResults.length + " tokens");
+			var stopwatch:StopWatch = new StopWatch();
+			stopwatch.start("All tokens");
 			for each (var proxyLoadResult:ProxyLoadResult in loadResults)
 			{
 				var request:ProxyLoadRequest = requestHash[proxyLoadResult.requestKey];
 				var requestResultEvent:ResultEvent = ResultEvent.createEvent(proxyLoadResult.result,request.internalAsyncToken);
+				var tokenStopwatch:StopWatch = StopWatch.startNew("Inner token");
 				request.internalAsyncToken.applyResult(requestResultEvent);
+				tokenStopwatch.stopAndTrace();
 			}
+			stopwatch.stopAndTrace();
 		}
 		private function batchLoadFailed(event:FaultEvent):void
 		{

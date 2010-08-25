@@ -40,6 +40,7 @@ package net.digitalprimates.persistence.hibernate
 	import net.digitalprimates.flex2.mx.utils.BeanUtil;
 	import net.digitalprimates.persistence.collections.ManagedArrayList;
 	import net.digitalprimates.persistence.events.LazyLoadEvent;
+	import net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject;
 	import net.digitalprimates.persistence.state.StateRepository;
 	import net.digitalprimates.util.LogUtil;
 
@@ -48,44 +49,70 @@ package net.digitalprimates.persistence.hibernate
 		public static const PROXY_LOAD_METHOD:String="loadDPProxy";
 
 		public static const PROXY_SAVE_METHOD:String="saveDPProxy";
-		
-		public static var hibernateRPCProvider:IHibernateROProvider = new DefaultHibernateRPCProvider();
-		
+
 		protected static var recursionWatch:Dictionary=new Dictionary(true);
 
 		protected static var pendingDictionary:Dictionary=new Dictionary(true);
 
+		protected static var hibernateDictionary:Dictionary=new Dictionary(true);
+
+		protected static var objectTypeMap:Object=new Object();
+
+		protected static var serverCallsEnanabled:Dictionary=new Dictionary(true);
+
 		private static var log:ILogger=LogUtil.getLogger(HibernateManaged);
 
-		// TODO : This belongs on DefaultHibernateRPCProvider
-		// However, moving it makes config uglier.
-		public static var defaultHibernateService:IHibernateRPC;
+		private static var _defaultHibernateService:IHibernateRPC;
+
+		public static function set defaultHibernateService(value:IHibernateRPC):void
+		{
+			_defaultHibernateService=value;
+		}
+
+		public static function get defaultHibernateService():IHibernateRPC
+		{
+			return _defaultHibernateService;
+		}
+
+		public static function areServerCallsEnabled(ro:IHibernateRPC):Boolean
+		{
+			return (serverCallsEnanabled[ro] != false);
+		}
+
+		public static function enableServerCalls(ro:IHibernateRPC):void
+		{
+			serverCallsEnanabled[ro]=true;
+		}
+
+		public static function disableServerCalls(ro:IHibernateRPC):void
+		{
+			serverCallsEnanabled[ro]=false;
+		}
+
+		public static function getIHibernateRPC(obj:HibernateProxy):IHibernateRPC
+		{
+			return hibernateDictionary[obj] as IHibernateRPC
+		}
 
 		public static function getIHibernateRPCForBean(obj:IHibernateProxy):IHibernateRPC
 		{
-			return hibernateRPCProvider.getRemoteObject(obj);
+			var ro:Object=hibernateDictionary[obj];
+			if (!ro)
+				return defaultHibernateService;
+			if (ro is IHibernateRPC)
+				return ro as IHibernateRPC;
+			if (ro is HibernateManagedEntry)
+				return HibernateManagedEntry(ro).ro;
+			return defaultHibernateService;
 		}
-
-		public static function manageChildTree(object:Object, parent:Object=null, propertyName:String=null):void
+		public static function manageChildTree(object:Object, parent:Object=null, propertyName:String=null, ro:IHibernateRPC=null):void
 		{
 			recursionWatch=new Dictionary(true);
-			manageChildHibernateObjects(object, parent, propertyName);
+			manageChildHibernateObjects(object, parent, propertyName, ro);
 			recursionWatch=new Dictionary(true);
 		}
-
-		private static function manageChildHibernateObjects(object:Object, parent:Object=null, propertyName:String=null):void
+		public static function manageChildHibernateObjects(object:Object, parent:Object=null, propertyName:String=null, ro:IHibernateRPC=null):void
 		{
-			// TODO : MP : From what I can tell, we walk the full tree here, recursively
-			// calling manageChildHibernateObjects().  However, almost everything
-			// that was performed here is now not required.
-			// The one remaining task is that we find ArrayCollections
-			// and turn them into Managed array collections if they are paginated.
-			// Need to work out a way to do that which doesn't involve this recursion
-			//
-			// What if we change the type sent by the server for Paginated collections
-			// from mx.collections.ArrayCollection to org.dphibernate.collections.ManagedCollection
-			// (given ManagedCollection extends ArrayCollection)
-			// Then, we don't need any of this.
 			var entry:XML;
 			var accessors:XMLList
 
@@ -125,25 +152,25 @@ package net.digitalprimates.persistence.hibernate
 						}
 						else
 						{
-							manageChildHibernateObjects(object[accessors[k].@name], object, accessors[k].@name);
+							manageChildHibernateObjects(object[accessors[k].@name], object, accessors[k].@name, ro);
 						}
 					}
 				}
 			}
 			else if (object is ArrayCollection)
 			{
-				manageArrayCollection(ArrayCollection(object));
+				manageArrayCollection(ArrayCollection(object), ro);
 			}
 			else if (!ObjectUtil.isSimple(object))
 			{
 				for (var j:int=0; j < accessors.length(); j++)
 				{
-					manageChildHibernateObjects(object[accessors[j].@name], object, accessors[j].@name);
+					manageChildHibernateObjects(object[accessors[j].@name], object, accessors[j].@name, ro);
 				}
 			}
 		}
 
-		public static function manageArrayCollection(collection:ArrayCollection):void
+		public static function manageArrayCollection(collection:ArrayCollection, ro:IHibernateRPC):void
 		{
 			if (collection.list is ManagedArrayList)
 			{
@@ -153,7 +180,7 @@ package net.digitalprimates.persistence.hibernate
 			for (var i:int=0; i < collection.length; i++)
 			{
 				var collectionMember:Object=collection[i];
-				manageChildHibernateObjects(collectionMember, collection, String(i))
+				manageChildHibernateObjects(collectionMember, collection, String(i), ro)
 				if (collectionMember is IHibernateProxy && IHibernateProxy(collectionMember).proxyInitialized == false)
 				{
 					isPagedCollection=true;
@@ -172,30 +199,37 @@ package net.digitalprimates.persistence.hibernate
 
 		public static function manageHibernateObject(obj:IHibernateProxy, parent:Object):void
 		{
+//			hibernateDictionary[obj]=new HibernateManagedEntry(ro, parent, parentProperty);
+
 			if ((obj is IPropertyChangeNotifier) && parent)
 			{
 				(obj as IPropertyChangeNotifier).addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
 			}
 		}
-		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String,value:*=null):*
+
+		protected static function isManaged(obj:IHibernateProxy):Boolean
 		{
-			var lazyLoadResponder:Responder=new Responder(HibernateManaged.lazyLoadArrived, HibernateManaged.lazyLoadFailed);
+			return hibernateDictionary[obj] != null;
+		}
+
+		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String=null, value:*=null):*
+		{
+			var repopulateResponder:Responder=new Responder(HibernateManaged.lazyLoadArrived, HibernateManaged.lazyLoadFailed);
 
 			var token:AsyncToken;
-			var remoteObject:IHibernateRPC = hibernateRPCProvider.getRemoteObject(obj);
-			token=remoteObject.loadProxy(obj.proxyKey, obj);
-			
-			token.ro = remoteObject;
-			token.addResponder(lazyLoadResponder);
+
+			var ro:IHibernateRPC=getIHibernateRPCForBean(obj);
+			token=ro.loadProxy(obj.proxyKey, obj);
+
+			token.addResponder(repopulateResponder);
 			token.obj=obj;
 			token.property=property;
-			token.ro=remoteObject;
+			token.ro=hibernateDictionary[obj].ro;
 
 			token.oldValue=obj;
-			/*
+
 			token.parent=hibernateDictionary[obj].parent;
 			token.parentProperty=hibernateDictionary[obj].parentProperty;
-			*/
 			trace("Asking for Lazy Data for Property " + token.parentProperty);
 
 
@@ -215,17 +249,42 @@ package net.digitalprimates.persistence.hibernate
 		public static function getProperty(obj:IHibernateProxy, property:String, value:*):*
 		{
 
-			var ro:IHibernateRPC = hibernateRPCProvider.getRemoteObject(obj);
+			var ro:IHibernateRPC=defaultHibernateService;
+			/*
+			   var entry:HibernateManagedEntry = hibernateDictionary[obj] as HibernateManagedEntry
+
+			   if (entry == null)
+			   {
+			   return value;
+			   }
+
+			   ro = entry.ro;
+			 */
 			if (obj.proxyInitialized)
 			{
+				//We need to check here if this particular item we are about to return is a proxy itself...
+				//If it is a proxy,then we probably need to go and instantiate it now
+				/*
+				   //I don't believe this is needed, this is occuring if we try to access the proxy itself
+				   //At this point, we have not tried to access the children of the proxy, which is what
+				   //should cause the lazy load
+				   if ( ( value ) && ( value is IHibernateProxy ) && ( !IHibernateProxy(value).proxyInitialized ) ) {
+				   if ( hibernateDictionary[ value ] ) {
+				   if ( !pendingDictionary[ value ] && areServerCallsEnabled( ro ) ) {
+				   pendingDictionary[ value ] = true;
+				   return getLazyDataFromServer( value );
+				   }
+				   }
+				   }
+				 */
 				return value;
 			}
 			else
 			{
-				if (!pendingDictionary[obj] && ro.enabled)
+				if (!pendingDictionary[obj] && areServerCallsEnabled(ro))
 				{
 					pendingDictionary[obj]=true;
-					return getLazyDataFromServer(obj, property,value);
+					return getLazyDataFromServer(obj, property, value);
 				}
 				else
 				{
@@ -239,7 +298,7 @@ package net.digitalprimates.persistence.hibernate
 			trace(event.property + " propogating ");
 		}
 
-		public static function setProperty(obj:IHibernateProxy, property:Object, oldValue:*, newValue:*, parent:Object=null):void
+		public static function setProperty(obj:IHibernateProxy, property:Object, oldValue:*, newValue:*, parent:Object=null, parentProperty:String=null):void
 		{
 
 			var dispatcher:IEventDispatcher=obj as IEventDispatcher;
@@ -253,7 +312,10 @@ package net.digitalprimates.persistence.hibernate
 			{
 				newValue.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
 			}
-
+			if (newValue is ArrayCollection)
+			{
+				manageArrayCollection(newValue as ArrayCollection, defaultHibernateService);
+			}
 			if (dispatcher) // && (dispatcher.hasEventListener(PropertyChangeEvent.PROPERTY_CHANGE)) )
 			{
 				var event:PropertyChangeEvent=PropertyChangeEvent.createUpdateEvent(dispatcher, property, oldValue, newValue);
@@ -263,29 +325,36 @@ package net.digitalprimates.persistence.hibernate
 
 		public static function lazyLoadArrived(event:ResultEvent):void
 		{
-			var methodSw:StopWatch = StopWatch.startNew("lazyLoadArrived");
+			var methodSTopwatch:StopWatch=StopWatch.startNew("lazyLoadArrived");
 			var token:AsyncToken=event.token;
 
 			delete pendingDictionary[token.obj];
 
 			var classDef:Class=getDefinitionByName(getQualifiedClassName(token.obj)) as Class;
-			var ro:IHibernateRPC = token.ro;
-			ro.enabled = false;
+
+			disableServerCalls(token.ro as IHibernateRPC);
 			token.obj.proxyInitialized=true;
 
 			StateRepository.ignorePropertyChanges=true;
-			var sw:StopWatch = StopWatch.startNew("BeanUtil.populateBean");
-			BeanUtil.populateBean(event.result, classDef, token.obj, new Dictionary(true), token.parent);
-			sw.stopAndTrace();
+			var stopwatch:StopWatch=StopWatch.startNew("BeanUtil.populateBean");
+			var source:Object = event.result;
+			var bean:Object = token.obj;
+			BeanUtil.populateBean(source, classDef, bean, new Dictionary(true), token.parent );
+			stopwatch.stopAndTrace();
 			StateRepository.ignorePropertyChanges=false;
-			ro.enabled = true;
-			setProperty(token.obj, token.property, token.oldValue, event.result, token.parent)
+			//ValueObjectUtil.populateVO( event.result, classDef, token.obj, new Dictionary( true ) ); 
 
+			//In theory, this part would no longer be needed after the changes to populateBean
+			//manageChildTree( token.obj, token.parent, token.property, token.ro as IHibernateRPC );
+			enableServerCalls(token.ro as IHibernateRPC);
+			stopwatch=StopWatch.startNew("BeanUtil.setProperty");
+			setProperty(token.obj, token.property, token.oldValue, event.result, token.parent, token.parentProperty)
+			stopwatch.stopAndTrace();
 			if (token.obj is IEventDispatcher)
 			{
 				IEventDispatcher(token.obj).dispatchEvent(new LazyLoadEvent(LazyLoadEvent.complete, token.parentProperty, token.parent, true, true));
 			}
-			methodSw.stopAndTrace();
+			methodSTopwatch.stopAndTrace();
 		}
 
 		public static function lazyLoadFailed(event:FaultEvent):void
@@ -309,20 +378,21 @@ package net.digitalprimates.persistence.hibernate
 
 		protected static function handleHibernateResult(event:ResultEvent):void
 		{
-			var sw:StopWatch = StopWatch.startNew("handleHibernateResult");
+			var stopwatch:StopWatch=StopWatch.startNew("handleHibernateResult");
+			disableServerCalls(event.token.ro);
 			var remoteService:IHibernateRPC=IHibernateRPC(event.token.ro);
-			remoteService.enabled = false;
-			manageChildTree(event.result, null, null);
-			if (remoteService.stateTrackingEnabled)
-			{
-				manageStateOfResultObject(event);
-			}
-			remoteService.enabled = true;
-			sw.stopAndTrace();
+			   manageChildTree(event.result, null, null, remoteService);
+			   if ( remoteService.stateTrackingEnabled )
+			   {
+			   manageStateOfResultObject( event );
+			   }
+			enableServerCalls(event.token.ro);
+			stopwatch.stopAndTrace();
 		}
 
 		protected static function manageStateOfResultObject(event:ResultEvent):void
 		{
+			var stopwatch:StopWatch=StopWatch.startNew("manageStateOfResultObject");
 			if (event.result is IHibernateProxy)
 			{
 				StateRepository.store(event.result as IHibernateProxy);
@@ -331,7 +401,15 @@ package net.digitalprimates.persistence.hibernate
 			{
 				StateRepository.storeList(event.result as IList);
 			}
+			stopwatch.stopAndTrace();
 		}
+
+		public static function repopulateObject(oldObject:IHibernateProxy, newObject:IHibernateProxy, classDef:Class):void
+		{
+			var existingEntry:HibernateManagedEntry=hibernateDictionary[oldObject] as HibernateManagedEntry;
+			BeanUtil.populateBean(newObject, classDef, oldObject );
+		}
+
 		protected static function handleHibernateFault(event:FaultEvent):void
 		{
 			trace("Something bad happend\n" + event.fault.faultString);

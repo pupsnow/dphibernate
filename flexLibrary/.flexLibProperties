@@ -12,7 +12,6 @@
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateBean"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManagedEntry"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateProxy"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateProxy"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateRPC"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
@@ -39,6 +38,10 @@
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.LoadDPProxyOperationBufferFactory"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.ProxyLoadRequest"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.ProxyLoadResult"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateROProvider"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.DefaultHibernateRPCProvider"/>
+    <classEntry path="org.dphibernate.collections.PaginatedCollection"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.IDestinationAwareHibernateProxy"/>
   </includeClasses>
   <includeResources>
     <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>

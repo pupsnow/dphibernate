@@ -131,9 +131,9 @@ package net.digitalprimates.persistence.state
 			log.debug("storeChildren {0}::{1}", getQualifiedClassName(object), object.proxyKey);
 			var ro:IHibernateRPC=HibernateManaged.getIHibernateRPCForBean(object);
 			var reEnableServerCalls:Boolean;
-			if (HibernateManaged.areServerCallsEnabled(ro))
+			if (ro.enabled)
 			{
-				HibernateManaged.disableServerCalls(ro);
+				ro.enabled = false;
 				reEnableServerCalls=true;
 			}
 			for each (var accessor:XML in ClassUtils.getAccessors(object))
@@ -154,7 +154,7 @@ package net.digitalprimates.persistence.state
 			}
 			if (reEnableServerCalls)
 			{
-				HibernateManaged.enableServerCalls(ro);
+				ro.enabled = true;
 			}
 		}
 
@@ -349,9 +349,9 @@ package net.digitalprimates.persistence.state
 			// Prevent triggering loads of data
 			var ro:IHibernateRPC=HibernateManaged.getIHibernateRPCForBean(object);
 			var reEnableServerCalls:Boolean;
-			if (HibernateManaged.areServerCallsEnabled(ro))
+			if (ro.enabled)
 			{
-				HibernateManaged.disableServerCalls(ro);
+				ro.enabled = false;
 				reEnableServerCalls=true;
 
 			}
@@ -367,7 +367,7 @@ package net.digitalprimates.persistence.state
 			}
 			if (reEnableServerCalls)
 			{
-				HibernateManaged.enableServerCalls(ro);
+				ro.enabled = true;
 			}
 			return result;
 		}
