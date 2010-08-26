@@ -8,5 +8,13 @@
 	<classpathentry kind="lib" path="lib/org.springframework.core-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/org.springframework.security.core-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/org.springframework.transaction-3.0.3.RELEASE.jar"/>
+	<classpathentry kind="lib" path="lib/backport-util-concurrent-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/blazeds-common-3.2.0.3978.jar"/>
+	<classpathentry kind="lib" path="lib/blazeds-core-3.2.0.3978.jar"/>
+	<classpathentry kind="lib" path="lib/blazeds-remoting-3.2.0.3978.jar"/>
+	<classpathentry kind="lib" path="lib/org.springframework.beans-3.0.3.RELEASE.jar"/>
+	<classpathentry kind="lib" path="lib/org.springframework.context-3.0.3.RELEASE.jar"/>
+	<classpathentry kind="lib" path="lib/org.springframework.web-3.0.3.RELEASE.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api-2.5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
