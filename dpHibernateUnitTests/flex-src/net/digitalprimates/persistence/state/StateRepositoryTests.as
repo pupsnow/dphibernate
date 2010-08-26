@@ -10,24 +10,30 @@ package net.digitalprimates.persistence.state
 	import net.digitalprimates.persistence.hibernate.ClassUtils;
 	import net.digitalprimates.persistence.hibernate.HibernateManaged;
 	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
+	import net.digitalprimates.persistence.hibernate.IHibernateRPC;
+	import net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject;
 	import net.digitalprimates.persistence.state.testObjects.Author;
 	import net.digitalprimates.persistence.state.testObjects.Book;
 	import net.digitalprimates.persistence.state.testObjects.Publisher;
 	
-	public class StateRepositoryTests
+	import org.mockito.integrations.any;
+	import org.mockito.integrations.mock;
+	import org.mockito.integrations.never;
+	import org.mockito.integrations.verify;
+	
+	[RunWith("org.mockito.integrations.flexunit4.MockitoClassRunner")]
+	public class StateRepositoryTests extends BaseTestCase
 	{
+		
 		public function StateRepositoryTests()
 		{
 		}
 		
-		
-		private static var mockService : MockHibernateRPC;
 		private var changeMessageGenerator : ChangeMessageGenerator;
 		[Before]
-		public function setUp():void
+		public override function setUp():void
 		{
-			StateRepository.reset();
-			mockService = new MockHibernateRPC();
+			super.setUp();
 			changeMessageGenerator = new ChangeMessageGenerator();
 		}
 		[Test]
@@ -230,10 +236,10 @@ package net.digitalprimates.persistence.state
 		[Test]
 		public function noLazyLoadTriggeredDuringStorage() : void
 		{
-			mockService.expects("loadProxy").times(0)
 			var author:Author=getTestAuthorProxy();
 			StateRepository.store(author);
-			Assert.assertTrue( mockService.errorMessage() , mockService.success() );
+			verify(never()).that(mockService.loadProxy(any(),any()));
+//			Assert.assertTrue( mockService.errorMessage() , mockService.success() );
 		}
 		
 		[Test]
@@ -327,55 +333,5 @@ package net.digitalprimates.persistence.state
 			var message : ObjectChangeMessage = findChangeMessageForObject( changeMessages , clazz , object.proxyKey );
 			Assert.assertNotNull( message ); 
 		}
-		/**
-		 * Returns a populated Author class as if it had come across the wire
-		 * */
-		internal static function getTestAuthor(service:MockHibernateRPC = null):Author
-		{
-			if ( !service ) service = mockService; 
-			var author:Author=new Author();
-			author.name="Bloch";
-			author.age=45;
-			author.publisher=getPublisher();
-			author.books=new ArrayCollection([getBook(1, "Effective Java", author), getBook(2, "Effective Java 2nd Edition", author)]);
-
-			author.proxyKey=123;
-			author.proxyInitialized=true;
-
-			HibernateManaged.manageHibernateObject(author, null, null, service);
-
-			return author;
-		}
-		internal static function getTestAuthorProxy(service:MockHibernateRPC = null) : Author
-		{
-			if ( !service ) service = mockService; 
-			var author : Author = new Author();
-			author.proxyKey = 123;
-			author.proxyInitialized = false;
-			HibernateManaged.manageHibernateObject(author, null, null, service);
-			return author;
-		}
-		internal static function getBook(id:int, title:String, author:Author):Book
-		{
-			var book:Book=getNewBook(title,author);
-			book.proxyKey = id;
-			return book;
-		}
-		internal static function getNewBook(title:String, author:Author):Book
-		{
-			var book:Book=new Book();
-			book.author=author;
-			book.title=title;
-			return book;
-		}
-
-		internal static function getPublisher():Publisher
-		{
-			var publisher:Publisher=new Publisher();
-			publisher.address="123 Somewhere Lane";
-			publisher.name="Addison Wesley";
-			return publisher;
-		}
-
 	}
 }

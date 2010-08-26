@@ -8,28 +8,29 @@ package net.digitalprimates.persistence.state
 	
 	import net.digitalprimates.persistence.state.testObjects.Author;
 	import net.digitalprimates.persistence.state.testObjects.Book;
+	
+	import org.mockito.integrations.any;
+	import org.mockito.integrations.given;
 
-	public class HibernateUpdaterTests
+	public class HibernateUpdaterTests extends BaseTestCase
 	{
 		public function HibernateUpdaterTests()
 		{
 		}
-		private var mockService:MockHibernateRPC;
 		private var changeMessageGenerator:ChangeMessageGenerator;
+
 		[Before]
-		public function setUp():void
+		public override function setUp():void
 		{
-			StateRepository.reset();
-			mockService=new MockHibernateRPC();
 			changeMessageGenerator = new ChangeMessageGenerator();
 		}
 
 		[Test]
 		public function hasChangesFalseAfterUpdate():void
 		{
-			var author:Author=StateRepositoryTests.getTestAuthor(mockService);
+			var author:Author=getTestAuthor(mockService);
 			var returnToken:AsyncToken=new AsyncToken(null);
-			mockService.expects("saveProxy").withAnyArgs().willReturn(returnToken);
+			given(mockService.saveProxy(any(),any())).willReturn(returnToken);
 
 			StateRepository.store(author);
 			author.name="Sondehim";
@@ -43,7 +44,7 @@ package net.digitalprimates.persistence.state
 		[Test]
 		public function givenUpdatingNewObjectCompletedThatNewIdIsSetOnObject():void
 		{
-			var author:Author=StateRepositoryTests.getTestAuthor(mockService);
+			var author:Author=getTestAuthor(mockService);
 			StateRepository.store(author);
 			var book:Book=StateRepositoryTests.getNewBook("Getting Real", author);
 			author.books.addItem(book);
@@ -53,7 +54,7 @@ package net.digitalprimates.persistence.state
 			Assert.assertTrue( bookChanges.hasChanges );
 			
 			var returnToken:AsyncToken=new AsyncToken(null);
-			mockService.expects("saveProxy").withAnyArgs().willReturn(returnToken);
+			given(mockService.saveProxy(any(),any())).willReturn(returnToken);
 			
 			author.save();
 			
@@ -72,13 +73,13 @@ package net.digitalprimates.persistence.state
 		[Test]
 		public function givenChangesMadeToAnObjectWhileUpdateInProgressThatChangesAreAppliedAfterUpdateCompletes():void
 		{
-			var author:Author=StateRepositoryTests.getTestAuthor(mockService);
+			var author:Author=getTestAuthor(mockService);
 			StateRepository.store(author);
 			author.name = "Schwartz";
 			author.publisher.name = "Manning";
 				
 			var returnToken:AsyncToken=new AsyncToken(null);
-			mockService.expects("saveProxy").withAnyArgs().willReturn(returnToken);
+			given(mockService.saveProxy(any(),any())).willReturn(returnToken);
 			
 			author.save();
 			
@@ -99,15 +100,15 @@ package net.digitalprimates.persistence.state
 		[Test]
 		public function afterSuccessfulCreationSubsequentUpdatesSentWithCorrectKey() : void
 		{
-			var author:Author=StateRepositoryTests.getTestAuthor(mockService);
+			var author:Author=getTestAuthor(mockService);
 			StateRepository.store(author);
 			var oldId : int = 4;
 			var newId : int = 100;
-			var book:Book=StateRepositoryTests.getBook(oldId, "Getting Real", author);
+			var book:Book=getBook(oldId, "Getting Real", author);
 			author.books.addItem(book);
 			
 			var returnToken:AsyncToken=new AsyncToken(null);
-			mockService.expects("saveProxy").withAnyArgs().willReturn(returnToken);
+			given(mockService.saveProxy(any(),any())).willReturn(returnToken);
 			
 			author.save();
 			
