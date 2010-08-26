@@ -6,14 +6,13 @@ import static ch.lambdaj.function.matcher.HasArgumentWithValue.havingValue;
 import static org.hamcrest.Matchers.is;
 
 import java.io.Serializable;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.annotation.Resource;
 
@@ -22,8 +21,6 @@ import org.dphibernate.persistence.interceptors.IChangeMessageInterceptor;
 import org.dphibernate.serialization.DPHibernateCache;
 import org.hibernate.SessionFactory;
 import org.hibernate.TypeMismatchException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -45,9 +42,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 	public ObjectChangeUpdater(SessionFactory sessionFactory,IProxyResolver proxyResolver)
 	{
-		this.sessionFactory = sessionFactory;
-		this.proxyResolver = proxyResolver;
-		this.cache = new DPHibernateCache();
+		this(sessionFactory,proxyResolver,new DPHibernateCache());
 	}
 	@Resource
 	private SessionFactory sessionFactory;
@@ -57,6 +52,8 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 	@Resource
 	private DPHibernateCache cache;
+	
+	private IPrincipalProvider principalProvider;
 
 	private Map<String,Set<ObjectChangeResult>> processedKeys = new HashMap<String,Set<ObjectChangeResult>>();
 
@@ -79,33 +76,38 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 
 
-	private void applyPostProcessors(ObjectChangeMessage changeMessage)
+	protected void applyPostProcessors(ObjectChangeMessage changeMessage)
 	{
 		applyInterceptors(changeMessage, getPostProcessors());
 	}
 
 
-	private void applyInterceptors(ObjectChangeMessage changeMessage, List<IChangeMessageInterceptor> interceptors)
+	protected void applyInterceptors(ObjectChangeMessage changeMessage, List<IChangeMessageInterceptor> interceptors)
 	{
 		if (interceptors == null)
 			return;
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		
 		for (IChangeMessageInterceptor interceptor : interceptors)
 		{
 			if (interceptor.appliesToMessage(changeMessage))
 			{
-				if (authentication != null && !authentication.getPrincipal().equals("roleAnonymous"))
-				{
-					interceptor.processMessage(changeMessage, proxyResolver, (Principal) authentication.getPrincipal());
-				} else
-				{
-					interceptor.processMessage(changeMessage, proxyResolver);
-				}
+				applyInterceptor(interceptor,changeMessage);
 			}
 		}
 	}
-
-
+	
+	private void applyInterceptor(IChangeMessageInterceptor interceptor, ObjectChangeMessage changeMessage)
+	{
+		if (getPrincipalProvider() == null)
+		{
+			interceptor.processMessage(changeMessage, proxyResolver);
+		} else if (getPrincipalProvider().isAnonymous())
+		{
+			interceptor.processMessage(changeMessage, proxyResolver);
+		} else {
+			interceptor.processMessage(changeMessage, proxyResolver, getPrincipalProvider().getPrincipal());
+		}
+	}
 	private void applyPreProcessors(ObjectChangeMessage changeMessage) throws ObjectChangeAbortedException
 	{
 		applyInterceptors(changeMessage, getPreProcessors());
@@ -377,6 +379,14 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	public List<IChangeMessageInterceptor> getPostProcessors()
 	{
 		return postProcessors;
+	}
+	public void setPrincipleProvider(IPrincipalProvider principalProvider)
+	{
+		this.principalProvider = principalProvider;
+	}
+	public IPrincipalProvider getPrincipalProvider()
+	{
+		return principalProvider;
 	}
 
 }

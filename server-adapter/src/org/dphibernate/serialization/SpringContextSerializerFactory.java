@@ -49,7 +49,8 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	{
 		ServletContext ctx = FlexContext.getServletContext();
 		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
-		ISerializer serializer = (ISerializer) springContext.getBean("hibernateSerializerBean",new Object[]{source,useAggressiveSerialization});
+		String serializerBeanName = getSerializerBeanName(springContext);
+		ISerializer serializer = (ISerializer) springContext.getBean(serializerBeanName,new Object[]{source,useAggressiveSerialization});
 		serializer.configure(defaultConfiguration);
 		if (serializer == null)
 		{
@@ -57,18 +58,45 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 		}
 		return serializer;
 	}
+	String getSerializerBeanName(WebApplicationContext context)
+	{
+		String[] beanNames = context.getBeanNamesForType(ISerializer.class);
+		if (beanNames.length == 0)
+		{
+			throw new RuntimeException("No Serializer is configured in the Spring context.  Ensure exactly one one ISerializer instance is declared");
+		}
+		if (beanNames.length > 1)
+		{
+			throw new RuntimeException("More than one Serializer is configured in the Spring context.  Ensure exactly one one ISerializer instance is declared");
+		}
+		return beanNames[0];
+	}
 
 	@Override
 	public IDeserializer getDeserializer()
 	{
 		ServletContext ctx = FlexContext.getServletContext();
 		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
-		IDeserializer deserializer = (IDeserializer) springContext.getBean("hibernateDeserializerBean");
+		String deserializerBeanName = getDeserializerBeanName(springContext);
+		IDeserializer deserializer = (IDeserializer) springContext.getBean(deserializerBeanName);
 		if (deserializer == null)
 		{
 			deserializer = new HibernateDeserializer();
 		}
 		return deserializer;
+	}
+	String getDeserializerBeanName(WebApplicationContext context)
+	{
+		String[] beanNames = context.getBeanNamesForType(IDeserializer.class);
+		if (beanNames.length == 0)
+		{
+			throw new RuntimeException("No Deserializer is configured in the Spring context.  Ensure exactly one one IDeserializer instance is declared");
+		}
+		if (beanNames.length > 1)
+		{
+			throw new RuntimeException("More than one deserializer is configured in the Spring context.  Ensure exactly one one IDeserializer instance is declared");
+		}
+		return beanNames[0];
 	}
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
