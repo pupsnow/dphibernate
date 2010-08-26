@@ -13,7 +13,6 @@ xsi:noNamespaceSchemaLocation="http://incubator.apache.org/ivy/schemas/ivy.xsd">
 		<dependency org="com.googlecode.lambdaj" name="lambdaj" rev="2.3"/>
 		<!-- Spring Dependencies -->
 		<dependency org="org.springframework" name="org.springframework.core" rev="3.0.3.RELEASE" />
-		<dependency org="org.springframework.security" name="org.springframework.security.core" rev="3.0.3.RELEASE" />
 		<!--  Test Dependencies -->
 		<dependency org="org.mockito" name="mockito-core" rev="1.8.5"/>
 		<dependency org="org.dbunit" name="dbunit" rev="2.4.7"/>
