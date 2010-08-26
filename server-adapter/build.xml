@@ -1,4 +1,4 @@
-<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" name="dpHibernate" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project xmlns:artifact="antlib:org.apache.maven.artifact.ant" name="dpHibernate-serverAdapter" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
 	<path id="maven-ant-tasks.classpath" path="build/libs/maven-ant-tasks-2.0.10.jar" />
 	<import file="build/includes/ivy-includes.xml" />
 	
@@ -9,7 +9,7 @@
 	<property name="bindir" value="${basedir}/bin" />
 	<property name="generateddir" value="${basedir}/build" />
 	<property name="javalibrarydir" value="${basedir}/lib" />
-	<property name="jar.name" value="dpHibernate${version}.jar" />
+	<property name="jar.name" value="dpHibernate-${version}.jar" />
 	<property name="destfile" value="${generateddir}/${jar.name}" />
 	<path id="libraries">
 		<fileset dir="${javalibrarydir}">
