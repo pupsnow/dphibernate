@@ -36,7 +36,6 @@ import java.util.UUID;
 
 import javax.annotation.Resource;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dphibernate.collections.PaginatedCollection;
@@ -62,7 +61,6 @@ import org.hibernate.sql.SimpleSelect;
 import org.hibernate.transform.ResultTransformer;
 import org.hibernate.type.StringType;
 import org.hibernate.type.Type;
-import org.springframework.transaction.annotation.Transactional;
 
 import flex.messaging.io.amf.ASObject;
 
@@ -72,7 +70,6 @@ import flex.messaging.io.amf.ASObject;
  * @author mike nimer
  */
 @SuppressWarnings("unchecked")
-@Transactional(readOnly = true)
 public class HibernateSerializer extends AbstractSerializer
 {
 	private static final Log log = LogFactory.getLog(HibernateSerializer.class);
@@ -122,7 +119,6 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
-	@Transactional
 	@Override
 	/**
 	 * Serializes the source object.

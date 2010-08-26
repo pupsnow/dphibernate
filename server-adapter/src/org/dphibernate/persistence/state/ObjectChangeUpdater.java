@@ -21,7 +21,6 @@ import org.dphibernate.persistence.interceptors.IChangeMessageInterceptor;
 import org.dphibernate.serialization.DPHibernateCache;
 import org.hibernate.SessionFactory;
 import org.hibernate.TypeMismatchException;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This class is not thread-safe. Use with prototype scope.
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
  * @author owner
  * 
  */
-@Transactional
 public class ObjectChangeUpdater implements IObjectChangeUpdater
 {
 
@@ -214,7 +212,6 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 
 
-	@Transactional(readOnly = false)
 	@Override
 	public Set<ObjectChangeResult> update(List<ObjectChangeMessage> changeMessages)
 	{

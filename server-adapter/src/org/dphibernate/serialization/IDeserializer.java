@@ -29,5 +29,5 @@ import flex.messaging.messages.RemotingMessage;
  */
 public interface IDeserializer 
 {
-	Object translate(RemotingAdapter adapter, RemotingMessage message, String loadMethodName, String sessionFactoryClazz, String getSessionMethod, Object obj);
+	Object translate(RemotingAdapter adapter, RemotingMessage message, String sessionFactoryClazz, String getSessionMethod, Object obj);
 }

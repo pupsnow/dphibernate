@@ -4,12 +4,9 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import org.dphibernate.core.IHibernateProxy;
 import org.hibernate.SessionFactory;
-import org.springframework.transaction.annotation.Transactional;
 
-@Transactional
 public class DbProxyResolver implements IProxyResolver {
 
 	private Map<Object, IHibernateProxy> inProcessProxies = new HashMap<Object, IHibernateProxy>();

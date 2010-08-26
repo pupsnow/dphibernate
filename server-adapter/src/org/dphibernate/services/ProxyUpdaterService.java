@@ -3,7 +3,6 @@ package org.dphibernate.services;
 import java.util.List;
 import java.util.Set;
 
-
 import org.dphibernate.persistence.state.DbProxyResolver;
 import org.dphibernate.persistence.state.IObjectChangeUpdater;
 import org.dphibernate.persistence.state.IProxyResolver;
@@ -11,7 +10,6 @@ import org.dphibernate.persistence.state.ObjectChangeMessage;
 import org.dphibernate.persistence.state.ObjectChangeResult;
 import org.dphibernate.persistence.state.ObjectChangeUpdater;
 import org.hibernate.SessionFactory;
-import org.springframework.transaction.annotation.Transactional;
 
 public class ProxyUpdaterService implements IProxyUpdateService
 {
@@ -22,7 +20,6 @@ public class ProxyUpdaterService implements IProxyUpdateService
 		this.sessionFactory = sessionFactory;
 	}
 	
-	@Transactional(readOnly=false)
 	@Override
 	public Set<ObjectChangeResult> saveBean(List<ObjectChangeMessage> objectChangeMessage)
 	{
@@ -31,7 +28,6 @@ public class ProxyUpdaterService implements IProxyUpdateService
 		IObjectChangeUpdater changeUpdater = buildObjectChangeUpdater();
 		return changeUpdater.update(objectChangeMessage);
 	}
-	@Transactional(readOnly=false)
 	@Override
 	public Set<ObjectChangeResult> saveBean(ObjectChangeMessage objectChangeMessage)
 	{

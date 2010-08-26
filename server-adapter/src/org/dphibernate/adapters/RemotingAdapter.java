@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dphibernate.operations.AdapterOperation;
 import org.dphibernate.persistence.operations.SaveDPProxyOperation;
+import org.dphibernate.serialization.IDeserializer;
 import org.dphibernate.serialization.ISerializer;
 import org.dphibernate.serialization.ISerializerFactory;
 import org.dphibernate.serialization.SerializerConfiguration;
@@ -42,26 +43,20 @@ import flex.messaging.messages.RemotingMessage;
 import flex.messaging.services.remoting.adapters.JavaAdapter;
 
 @SuppressWarnings("unchecked")
-public class RemotingAdapter extends JavaAdapter
+public class RemotingAdapter extends JavaAdapter implements IAdapter
 {
 	private static final Log log = LogFactory.getLog(RemotingAdapter.class);
 	
 	protected Destination destination;
-	private static final String DEFAULT_LOAD_BATCH_METHOD_NAME = "loadProxyBatch";
-	private static final String DEFAULT_LOAD_METHOD_NAME = "loadBean";
-	private static final String DEFAULT_SAVE_METHOD_NAME = "saveBean";
-	private static final String DEFAULT_SERIALZIER_FACTORY_CLASSNAME = SimpleSerializationFactory.class.getCanonicalName();
-	private String loadMethodName;
-	private String saveMethodName;
-	private String loadBatchMethodName;
-	private int pageSize;
+
 	private HashMap<Class<? extends AdapterOperation>,AdapterOperation> operations;
 	private ISerializerFactory serializerFactory;
-	private SerializerConfiguration defaultConfiguration;
-
+	
+	private final AdapterBuilder builder;
 	public RemotingAdapter()
 	{
 		super();
+		builder = new AdapterBuilder(this);
 	}
 
 	/**
@@ -70,97 +65,9 @@ public class RemotingAdapter extends JavaAdapter
 	public void initialize(String id, ConfigMap properties)
 	{
 		super.initialize(id, properties);
-		if (properties == null || properties.size() == 0)
-			return;
-
-		initalizeOperations();
-		ConfigMap dpHibernateProps = properties.getPropertyAsMap("dpHibernate", new ConfigMap());
-		loadMethodName = dpHibernateProps.getPropertyAsString("loadMethod", getDefaultLoadMethodName());
-		loadBatchMethodName = dpHibernateProps.getPropertyAsString("loadBatchMethod", getDefaultLoadBatchMethodName());
-		saveMethodName = dpHibernateProps.getPropertyAsString("saveMethod", getDefaultSaveMethodName());
-		pageSize = dpHibernateProps.getPropertyAsInt("pageSize", getDefaultPageSize());
-		addOperation(new LoadDPProxyOperation(loadMethodName));
-		addOperation(new SaveDPProxyOperation(saveMethodName));
-		addOperation(new LoadDPProxyBatchOperation(loadBatchMethodName));
-		initializeDefaultConfiguration();
-		initalizeSerializerFactory(dpHibernateProps);
-		logConfiguration();
+		builder.build(properties);
 	}
 	
-
-	private void initializeDefaultConfiguration()
-	{
-		defaultConfiguration = new SerializerConfiguration(pageSize);
-	}
-
-	private String getDefaultLoadBatchMethodName()
-	{
-		return (loadBatchMethodName != null) ? loadBatchMethodName : DEFAULT_LOAD_BATCH_METHOD_NAME;
-	}
-
-	private void addOperation(AdapterOperation operation)
-	{
-		operations.put(operation.getClass(), operation);
-	}
-
-	private void initalizeOperations()
-	{
-		if (operations == null)
-		{
-			operations = new HashMap<Class<? extends AdapterOperation>, AdapterOperation>();
-		}
-	}
-
-	private String getDefaultSaveMethodName()
-	{
-		return (saveMethodName != null) ? saveMethodName : DEFAULT_SAVE_METHOD_NAME; 
-	}
-	
-	private int getDefaultPageSize()
-	{
-		return (pageSize != -1) ? pageSize : -1;  
-	}
-
-	private String getDefaultLoadMethodName()
-	{
-		return (loadMethodName != null) ? loadMethodName : DEFAULT_LOAD_METHOD_NAME;
-	}
-
-	private void logConfiguration()
-	{
-		log.debug("dpHibernate loadMethodName: " + loadMethodName);
-		log.debug("dpHibernate saveMethodName: " + saveMethodName);
-		String serializerFactoryName = (serializerFactory != null) ? serializerFactory.getClass().getCanonicalName() : "undefined";
-		log.debug("dpHibernate serializerFactory: " + serializerFactoryName);
-	}
-
-	private void initalizeSerializerFactory(ConfigMap adapterProps)
-	{
-		String serializationFactoryClassName = adapterProps.getPropertyAsString("serializerFactory", null);
-		if (serializerFactory != null && serializationFactoryClassName == null)
-		{
-			// The configuration did not specify an overriding SerializerFactory, and
-			// we already have one configured, so exit now.
-			return;
-		}
-		if (serializationFactoryClassName == null)
-		{
-			serializationFactoryClassName = DEFAULT_SERIALZIER_FACTORY_CLASSNAME;
-		}
-		Class<ISerializerFactory> serializationFactoryClass;
-		try
-		{
-			serializationFactoryClass = (Class<ISerializerFactory>) Class.forName(serializationFactoryClassName);
-			serializerFactory = serializationFactoryClass.newInstance();
-			serializerFactory.setDefaultConfiguration(defaultConfiguration);
-			HibernateUtil.setSerializerFactory(serializerFactory);
-		} catch (Exception e)
-		{
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
-	}
-
 	public Object superInvoke(Message message)
 	{
 		return super.invoke(message);
@@ -188,20 +95,6 @@ public class RemotingAdapter extends JavaAdapter
 				}
 			}
 
-			/*
-			 * // Add support for the source="" attribute of the RemoteObject
-			 * tag. This give developer the option // of using a single
-			 * destination for all java calls, and defining the java class in
-			 * their mxml // note: This can be turned off at the desination
-			 * level by defined a <source/> other then "*" try { FactoryInstance
-			 * factoryInstance = remotingDestination.getFactoryInstance();
-			 * String className = factoryInstance.getSource(); // check for *
-			 * wildcard in destination, and if exists use source defined in mxml
-			 * if( "*".equals(className) ) { sourceClass =
-			 * remotingMessage.getSource();
-			 * factoryInstance.setSource(sourceClass); } }catch( Throwable ex ){
-			 * ex.printStackTrace();}
-			 */
 			System.out.println("{operation})****************" + remotingMessage.getOperation());
 			// Deserialize the incoming object data
 			List inArgs = remotingMessage.getParameters();
@@ -210,8 +103,8 @@ public class RemotingAdapter extends JavaAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-					Object o = serializerFactory.getDeserializer().translate(this, (RemotingMessage) remotingMessage.clone(), loadMethodName, null, null, inArgs);
-					remotingMessage.setParameters((List) o);
+					IDeserializer deserializer = serializerFactory.getDeserializer();
+					Object o = deserializer.translate(this, (RemotingMessage) remotingMessage.clone(), null, null, inArgs);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " + (e1 - s1));
 					// remotingMessage.setBody(body);
@@ -259,5 +152,26 @@ public class RemotingAdapter extends JavaAdapter
 	{
 		return (T) operations.get(operationClass);
 	}
+	
+	@Override
+	public void putOperation(AdapterOperation operation)
+	{
+		if (operations == null)
+		{
+			operations = new HashMap<Class<? extends AdapterOperation>, AdapterOperation>();
+		}
+		operations.put(operation.getClass(), operation);
+	}
 
+	@Override
+	public ISerializerFactory getSerializerFactory()
+	{
+		return serializerFactory;
+	}
+
+	@Override
+	public void setSerializerFactory(ISerializerFactory serializerFactory)
+	{
+		this.serializerFactory = serializerFactory;
+	}
 }

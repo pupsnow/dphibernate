@@ -53,17 +53,15 @@ public class HibernateDeserializer implements IDeserializer
 
 	private RemotingAdapter adapter;
 	private RemotingMessage remotingMessage;
-	private String loadMethod;
 
 	private HashMap cache;
 
-
-	public Object translate(RemotingAdapter adapter, RemotingMessage message, String loadMethod, String sessionFactoryClassName, String getSessionMethod, Object obj)
+	@Override
+	public Object translate(RemotingAdapter adapter, RemotingMessage message, String sessionFactoryClassName, String getSessionMethod, Object obj)
 	{
 		this.cache = new HashMap();
 		this.adapter = adapter;
 		this.remotingMessage = message;
-		this.loadMethod = loadMethod;
 
 		Object result = translate(obj);
 		return result;
@@ -150,14 +148,12 @@ public class HibernateDeserializer implements IDeserializer
 			List args = new ArrayList();
 			if (obj instanceof PersistentCollection)
 			{
-				this.remotingMessage.setOperation(loadMethod);
 				List paramArray = remotingMessage.getParameters();
 
 				args.add(Class.forName(obj.getClass().getName()));
 				args.add(((PersistentCollection) obj).getKey());
 			} else
 			{
-				this.remotingMessage.setOperation(loadMethod);
 				List paramArray = remotingMessage.getParameters();
 
 				args.add(Class.forName(obj.getClass().getName()));
