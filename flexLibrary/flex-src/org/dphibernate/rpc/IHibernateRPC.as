@@ -17,26 +17,19 @@
 **/
 
 
-package mx.data.utils {
-	import mx.data.IManaged;
-	
-	import org.dphibernate.rpc.HibernateManaged;
+package org.dphibernate.rpc
+{
+	import mx.rpc.AsyncToken;
 	import org.dphibernate.core.IHibernateProxy;
 	
-
-	public class Managed extends Object {
-		public static function getProperty(obj:IManaged, property:String, value:*):* {
-			if ( obj is IHibernateProxy ) {
-				return HibernateManaged.getProperty( obj as IHibernateProxy, property, value );
-			} else {
-				return value;
-			}
-		}
-
-		public static function setProperty(obj:IManaged, property:Object, oldValue:*, newValue:* ):void {
-			if ( obj is IHibernateProxy ) {
-				HibernateManaged.setProperty(obj as IHibernateProxy, property, oldValue, newValue );
-			}
-		}
+	public interface IHibernateRPC
+	{
+		function get stateTrackingEnabled() : Boolean;
+		function set stateTrackingEnabled( value : Boolean ) : void;
+		function loadProxy( proxyKey:Object, hibernateProxy:IHibernateProxy ):AsyncToken;
+		function saveProxy( hibernateProxy : IHibernateProxy , objectChangeMessages : Array ) : AsyncToken;
+		
+		function get enabled():Boolean;
+		function set enabled(value:Boolean):void;
 	}
 }
