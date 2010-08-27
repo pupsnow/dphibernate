@@ -6,7 +6,9 @@
 	
 	<typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="antlib:org.apache.maven.artifact.ant" classpathref="maven-ant-tasks.classpath" />
 	<artifact:pom id="mypom" file="pom.xml" />
-	<property name="version" value="${mypom.version}" />
+	<artifact:pom id="parent-pom" file="../pom.xml" />
+	
+	<property name="version" value="${parent-pom.version}" />
 	
 	<property name="libsPath" value="build/libs" />
 	
@@ -19,8 +21,13 @@
 			<pathelement location="${libsPath}/ant-contrib.jar" />
 		</classpath>
 	</taskdef>
+	
+	<target name="clean">
+		<delete dir="${output.dir}"/>
+		<mkdir dir="${output.dir}" />
+	</target>
 
-	<target name="compile-swc">
+	<target name="compile-swc" depends="clean">
 		<pathconvert property="flex.classes" pathsep=" ">
 			<fileset dir="${basedir}\flex-src">
 				<include name="**/*.as" />
