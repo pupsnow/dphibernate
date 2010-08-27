@@ -4,30 +4,34 @@
 	
 	<typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="antlib:org.apache.maven.artifact.ant" classpathref="maven-ant-tasks.classpath" />
 	<artifact:pom id="mypom" file="pom.xml" />
-	<property name="version" value="${mypom.version}" />
-	<property name="sourcedir" value="${basedir}/src" />
-	<property name="bindir" value="${basedir}/bin" />
-	<property name="generateddir" value="${basedir}/build" />
-	<property name="javalibrarydir" value="${basedir}/lib" />
-	<property name="jar.name" value="${mypom.artifactId}-${version}.jar" />
-	<property name="destfile" value="${generateddir}/${jar.name}" />
+	<artifact:pom id="parent-pom" file="../pom.xml" />
+	
+	<property name="version" value="${parent-pom.version}" />
+	
+	<property name="source.dir" value="${basedir}/src" />
+	<property name="output.dir" value="${basedir}/bin" />
+	<property name="libs.dir" value="${basedir}/lib" />
+
+	<property name="jar.name" value="dpHibernate-springExtensions3.0-${version}.jar" />
+	<property name="destfile" value="${output.dir}/${jar.name}" />
+	
 	<path id="libraries">
-		<fileset dir="${javalibrarydir}">
+		<fileset dir="${libs.dir}">
 			<include name="**/*.jar" />
 		</fileset>
-		<fileset dir="../server-adapter/build">
-			<include name="dpHibernate-${mypom.version}.jar"/>
+		<fileset dir="../server-adapter/bin">
+			<include name="dpHibernate-${version}.jar"/>
 		</fileset>
 	</path>
 
 	<target name="compile" depends="clean,resolve">
-		<javac srcdir="${sourcedir}" destdir="${bindir}" classpathref="libraries" fork="true" target="1.6" nowarn="true" />
+		<javac srcdir="${source.dir}" destdir="${output.dir}" classpathref="libraries" fork="true" target="1.6" nowarn="true" />
 	</target>
 
 	<target name="jar" depends="clean,compile">
 		<jar destfile="${destfile}">
-			<fileset dir="${bindir}" />
-			<fileset dir="${sourcedir}">
+			<fileset dir="${output.dir}" />
+			<fileset dir="${source.dir}">
 				<include name="**/*.xml" />
 				<exclude name="hibernate.cfg.xml" />
 				<exclude name="log4j.properties" />
@@ -36,10 +40,8 @@
 	</target>
 
 	<target name="clean">
-		<!--delete dir="${generateddir}"/-->
-		<mkdir dir="${generateddir}" />
-		<delete dir="${bindir}" failonerror="false" />
-		<mkdir dir="${bindir}" />
+		<delete dir="${output.dir}"/>
+		<mkdir dir="${output.dir}" />
 		<delete file="${destfile}" failonerror="false" />
 	</target>
 

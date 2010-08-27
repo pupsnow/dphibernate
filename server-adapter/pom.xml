@@ -10,5 +10,7 @@
 	<name>serverAdapter</name>
 	<groupId>org.dpHibernate</groupId>
 	<artifactId>dpHibernate</artifactId>
+	<!--  TODO: Derive version from parent pom -->
+	<!--  Currently, this value is ignored, but required for completeness of the pom -->
 	<version>2.0-SNAPSHOT</version>
 </project>

@@ -35,10 +35,10 @@
 		
 	<target name="copy">
 		<copy todir="${output.folder}">
-			<fileset dir="server-adapter/build" includes="*.jar" />
-			<fileset dir="spring-extensions-2.5.6/build" includes="*.jar" />
-			<fileset dir="spring-extensions-3.0/build/" includes="*.jar" />
-			<fileset dir="flexLibrary/build/" includes="*.swc" />
+			<fileset dir="server-adapter/bin" includes="*.jar" />
+			<fileset dir="spring-extensions-2.5.6/bin" includes="*.jar" />
+			<fileset dir="spring-extensions-3.0/bin" includes="*.jar" />
+			<fileset dir="flexLibrary/bin" includes="*.swc" />
 		</copy>
 	</target>
 </project>
