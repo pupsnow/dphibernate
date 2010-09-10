@@ -20,8 +20,8 @@
 package mx.data.utils {
 	import mx.data.IManaged;
 	
-	import net.digitalprimates.persistence.hibernate.HibernateManaged;
-	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
+	import org.dphibernate.rpc.HibernateManaged;
+	import org.dphibernate.core.IHibernateProxy;
 	
 
 	public class Managed extends Object {

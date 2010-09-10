@@ -3,8 +3,5 @@
 	<component id="Managed" class="mx.data.utils.Managed"/>
 	<component id="IManaged" class="mx.data.IManaged"/>
 	
-	<component id="HibernateBean" class="net.digitalprimates.persistence.hibernate.HibernateBean"/>
-	<component id="HibernateManaged" class="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
-	<component id="HibernateRemoteObject" class="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
-	<component id="IHibernateProxy" class="net.digitalprimates.persistence.hibernate.IHibernateProxy"/>
+	<component id="HibernateRemoteObject" class="org.dphibernate.rpc.HibernateRemoteObject"/>
 </componentPackage>
