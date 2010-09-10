@@ -47,6 +47,6 @@
     <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>
   </includeResources>
   <namespaceManifests>
-    <namespaceManifestEntry manifest="dp-manifest.xml" namespace="http://www.digitalprimates.net/2007/mxml"/>
+    <namespaceManifestEntry manifest="dp-manifest.xml" namespace="http://www.dphibernate.org/2010/mxml"/>
   </namespaceManifests>
 </flexLibProperties>

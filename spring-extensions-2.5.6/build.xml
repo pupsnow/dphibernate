@@ -1,53 +1,16 @@
 <project xmlns:artifact="antlib:org.apache.maven.artifact.ant" name="dpHibernate-springExtensions-2.5.6" default="jar" xmlns:ivy="antlib:org.apache.ivy.ant">
-	<path id="maven-ant-tasks.classpath" path="build/libs/maven-ant-tasks-2.0.10.jar" />
-	<import file="build/includes/ivy-includes.xml" />
+	<target name="setupCustomProperties">
+		<property name="module.name" value="dpHibernate-springExtensions2.5.6" />
+	</target>
 	
-	<typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="antlib:org.apache.maven.artifact.ant" classpathref="maven-ant-tasks.classpath" />
-	<artifact:pom id="mypom" file="pom.xml" />
-	<artifact:pom id="parent-pom" file="../pom.xml" />
-	
-	<property name="version" value="${parent-pom.version}" />
-	
-	<property name="source.dir" value="${basedir}/src" />
-	<property name="output.dir" value="${basedir}/bin" />
-	<property name="libs.dir" value="${basedir}/lib" />
-
-	<property name="jar.name" value="dpHibernate-springExtensions2.5.6-${version}.jar" />
-	<property name="destfile" value="${output.dir}/${jar.name}" />
+	<import file="../build/includes/common-build.xml"  />
 	
 	<path id="libraries">
 		<fileset dir="${libs.dir}">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="../server-adapter/bin">
-			<include name="dpHibernate-${version}.jar"/>
+			<include name="dpHibernate-*.jar"/>
 		</fileset>
 	</path>
-
-	<target name="compile" depends="clean,resolve">
-		<javac srcdir="${source.dir}" destdir="${output.dir}" classpathref="libraries" fork="true" target="1.6" nowarn="true" />
-	</target>
-
-	<target name="jar" depends="clean,compile">
-		<jar destfile="${destfile}">
-			<fileset dir="${output.dir}" />
-			<fileset dir="${source.dir}">
-				<include name="**/*.xml" />
-				<exclude name="hibernate.cfg.xml" />
-				<exclude name="log4j.properties" />
-			</fileset>
-		</jar>
-	</target>
-
-	<target name="clean">
-		<delete dir="${output.dir}"/>
-		<mkdir dir="${output.dir}" />
-		<delete file="${destfile}" failonerror="false" />
-	</target>
-
-	<target name="install" depends="jar">
-		<artifact:install file="${destfile}">
-			<pom refid="mypom" />
-		</artifact:install>
-	</target>
 </project>

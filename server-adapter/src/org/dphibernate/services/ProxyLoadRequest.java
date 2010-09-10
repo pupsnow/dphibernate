@@ -7,6 +7,8 @@ import java.rmi.server.UID;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.dphibernate.core.IHibernateProxy;
 
+import com.sun.corba.se.spi.legacy.connection.GetEndPointInfoAgainException;
+
 public class ProxyLoadRequest implements Comparable<ProxyLoadRequest>
 {
 
@@ -17,6 +19,18 @@ public class ProxyLoadRequest implements Comparable<ProxyLoadRequest>
 		this.className = className;
 		this.proxyID = proxyID;
 		this.requestKey = requestKey;
+		setProxyClass();
+	}
+	private void setProxyClass()
+	{
+		try
+		{
+			this.proxyClass = Class.forName(className);
+		} catch (ClassNotFoundException e)
+		{
+			throw new RuntimeException("Requested proxy class " + className + " does not exist");
+		}
+
 	}
 	public ProxyLoadRequest(String className,Serializable proxyID)
 	{
@@ -25,9 +39,11 @@ public class ProxyLoadRequest implements Comparable<ProxyLoadRequest>
 	private String className;
 	private Serializable proxyID;
 	private String requestKey;
+	private Class<?> proxyClass;
 	public void setClassName(String className)
 	{
 		this.className = className;
+		setProxyClass();
 	}
 	public String getClassName()
 	{
@@ -56,7 +72,8 @@ public class ProxyLoadRequest implements Comparable<ProxyLoadRequest>
 	}
 	public boolean matchesEntity(IHibernateProxy entity)
 	{
-		return entity.getClass().getCanonicalName().equals(this.getClassName())
+		boolean classesMatch = entity.getClass().isAssignableFrom(proxyClass); 
+		return classesMatch
 				&& entity.getProxyKey().equals(this.getProxyID());
 	}
 }
