@@ -37,7 +37,6 @@ public class MessagingAdapter extends ActionScriptAdapter implements IAdapter
      */
     public Object invoke(Message message)
     {
-		// TODO : Currently, only supports spring instances.
         ISerializer serializer = serializerFactory.getSerializer(message.getBody(),true);
         
         Object translatedBody = serializer.serialize();

@@ -16,5 +16,6 @@
 	<classpathentry kind="lib" path="lib/org.springframework.context-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/org.springframework.web-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api-2.5.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
