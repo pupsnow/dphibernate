@@ -74,13 +74,13 @@ import flex.messaging.io.amf.ASObject;
  * @author mike nimer
  */
 @SuppressWarnings("unchecked")
-public class HibernateSerializer extends AbstractSerializer
+public class CopyOfHibernateSerializer extends AbstractSerializer
 {
 	private static final Log log = LogFactory.getLog(CopyOfHibernateSerializer.class);
 	public static Dialect dialect;
 
 
-	public HibernateSerializer(Object source, boolean useAggressiveProxying)
+	public CopyOfHibernateSerializer(Object source, boolean useAggressiveProxying)
 	{
 		super(source);
 		this.useAggressiveProxying = useAggressiveProxying;
@@ -88,13 +88,13 @@ public class HibernateSerializer extends AbstractSerializer
 	}
 
 
-	public HibernateSerializer(Object source)
+	public CopyOfHibernateSerializer(Object source)
 	{
 		this(source, false);
 	}
 
 
-	public HibernateSerializer(Object source, boolean useAggressiveProxying, DPHibernateCache cache, SessionFactory sessionFactory)
+	public CopyOfHibernateSerializer(Object source, boolean useAggressiveProxying, DPHibernateCache cache, SessionFactory sessionFactory)
 	{
 		this(source, useAggressiveProxying);
 		this.cache = cache;
@@ -294,7 +294,7 @@ public class HibernateSerializer extends AbstractSerializer
 					Object serializedValue;
 					if (PropertyHelper.methodHasAnnotation(readMethod, AggressivelyProxy.class))
 					{
-						HibernateSerializer aggressiveSerializer = new HibernateSerializer(val, true, cache, sessionFactory);
+						CopyOfHibernateSerializer aggressiveSerializer = new CopyOfHibernateSerializer(val, true, cache, sessionFactory);
 						aggressiveSerializer.permitAgressiveProxyingOnRoot = true;
 						serializedValue = aggressiveSerializer.serialize();
 					} else
@@ -524,7 +524,13 @@ public class HibernateSerializer extends AbstractSerializer
 				AbstractCollectionPersister collectionPersister = (AbstractCollectionPersister) persister;
 				String className = collectionPersister.getElementType().getName();
 				EntityPersister entityPersister = session.getFactory().getEntityPersister(className);
-				CollectionProxyResolver collectionProxyResolver = getCollectionProxyResolver(collectionPersister, entityPersister);
+				CollectionProxyResolver collectionProxyResolver;
+				if (entityPersister instanceof SingleTableEntityPersister)
+				{
+					collectionProxyResolver = new DiscriminatedCollectionProxyResolver(getDialect(),(SingleTableEntityPersister) entityPersister,collectionPersister);
+				} else {
+					collectionProxyResolver = new SingleTypeCollectionProxyResolver(getDialect(), collectionPersister);
+				}
 				if (session instanceof Session)
 				{
 					List<IHibernateProxyDescriptor> proxyDescriptors = collectionProxyResolver.getCollectionProxies(session, collection);
@@ -555,20 +561,6 @@ public class HibernateSerializer extends AbstractSerializer
 			ex.printStackTrace();
 		}
 		return null;
-	}
-
-
-	private CollectionProxyResolver getCollectionProxyResolver(AbstractCollectionPersister collectionPersister, EntityPersister entityPersister)
-	{
-		CollectionProxyResolver collectionProxyResolver;
-		if (entityPersister instanceof SingleTableEntityPersister)
-		{
-			if (((SingleTableEntityPersister) entityPersister).getDiscriminatorColumnName() != null)
-			{
-				return new DiscriminatedCollectionProxyResolver(getDialect(),(SingleTableEntityPersister) entityPersister,collectionPersister);
-			}
-		}
-		return new SingleTypeCollectionProxyResolver(getDialect(), collectionPersister);
 	}
 
 

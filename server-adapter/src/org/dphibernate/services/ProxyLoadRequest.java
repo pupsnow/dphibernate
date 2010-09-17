@@ -76,4 +76,9 @@ public class ProxyLoadRequest implements Comparable<ProxyLoadRequest>
 		return classesMatch
 				&& entity.getProxyKey().equals(this.getProxyID());
 	}
+	@Override
+	public String toString()
+	{
+		return "ProxyLoadRequest [className=" + className + ", proxyID=" + proxyID + "]";
+	}
 }

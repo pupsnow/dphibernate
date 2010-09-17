@@ -25,20 +25,20 @@ import org.junit.BeforeClass;
 
 public abstract class DbTestCase
 {
-	private static final String JDBC_PASSWORD = "password";
-	private static final String JDBC_USERNAME = "root";
-	private static final String JDBC_CONNECTION_URL = "jdbc:mysql://localhost:3306/test";
-	private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
-//	private static final String JDBC_PASSWORD = "";
-//	private static final String JDBC_USERNAME = "sa";
-//	private static final String JDBC_CONNECTION_URL = "jdbc:hsqldb:mem:dphibernate";
-//	private static final String JDBC_DRIVER = "org.hsqldb.jdbcDriver";
-//	private static final String HIBERNATE_DIALECT = "org.hibernate.dialect.HSQLDialect";
+//	private static final String JDBC_PASSWORD = "password";
+//	private static final String JDBC_USERNAME = "root";
+//	private static final String JDBC_CONNECTION_URL = "jdbc:mysql://localhost:3306/test";
+//	private static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
+	private static final String JDBC_PASSWORD = "";
+	private static final String JDBC_USERNAME = "sa";
+	private static final String JDBC_CONNECTION_URL = "jdbc:hsqldb:mem:dphibernate";
+	private static final String JDBC_DRIVER = "org.hsqldb.jdbcDriver";
+	private static final String HIBERNATE_DIALECT = "org.hibernate.dialect.HSQLDialect";
 	private IDatabaseTester databaseTester;
 	private static SessionFactory sessionFactory;
 
 	Transaction transaction;
-	protected File getDataSet()
+	protected File getDataSet() throws Exception
 	{
 		return null;
 	}
@@ -62,14 +62,10 @@ public abstract class DbTestCase
 
 	private static void initializeHibernate()
 	{
+		// See hibernate.cfg.xml for other config
 		sessionFactory = new AnnotationConfiguration()
 			.setProperty("hibernate.hbm2ddl.auto", "create-drop")
 			.setProperty("hibernate.show_sql", "true")
-//			.setProperty("hibernate.connection.driver_class", JDBC_DRIVER)
-//			.setProperty("hibernate.connection.url", JDBC_CONNECTION_URL)
-//			.setProperty("hibernate.connection.username", JDBC_USERNAME)
-//			.setProperty("hibernate.connection.password", JDBC_PASSWORD)
-//			.setProperty("hibernate.connection.dialect", HIBERNATE_DIALECT)
 			.configure()
 			.buildSessionFactory();
 	}

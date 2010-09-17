@@ -17,6 +17,10 @@ public class Author extends BaseEntity
 	@ManyToOne
 	Publisher publisher;
 	
+	@OneToMany(mappedBy="author")
+	private
+	List<Post> posts;
+	
 	public Author(){}
 	public Author(String name, int age, Publisher publisher)
 	{
@@ -73,5 +77,13 @@ public class Author extends BaseEntity
 	public Book getBook(int i)
 	{
 		return books.get(i);
+	}
+	public void setPosts(List<Post> posts)
+	{
+		this.posts = posts;
+	}
+	public List<Post> getPosts()
+	{
+		return posts;
 	}
 }

@@ -51,11 +51,6 @@ public class HibernateSerializerTests {
     }
 
     @Test
-    public void serializesAbstractPersistentCollection() {
-        // TODO
-    }
-
-    @Test
     public void serializesArray() {
 
     }

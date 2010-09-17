@@ -46,6 +46,11 @@ public class HibernateProxyDescriptor implements IHibernateProxyDescriptor {
 	private Object proxyId;
 	
 	public HibernateProxyDescriptor(){}
+	public HibernateProxyDescriptor(String remoteClassName, Serializable id)
+	{
+		this.remoteClassName = remoteClassName;
+		this.proxyId = id;
+	}
 	public HibernateProxyDescriptor(Class<?> remoteClass, Serializable id)
 	{
 		this.remoteClassName = remoteClass.getName();
