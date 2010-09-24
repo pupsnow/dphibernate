@@ -22,6 +22,7 @@ package net.digitalprimates.persistence.state
 		{
 			StateRepository.reset();
 			mockService=mock(IHibernateRPC);
+			HibernateManaged.defaultHibernateService = mockService;
 		}
 
 		// Data Helpers

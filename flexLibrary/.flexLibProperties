@@ -42,6 +42,8 @@
     <classEntry path="org.dphibernate.rpc.DefaultHibernateRPCProvider"/>
     <classEntry path="org.dphibernate.collections.PaginatedCollection"/>
     <classEntry path="org.dphibernate.rpc.IDestinationAwareHibernateProxy"/>
+    <classEntry path="org.dphibernate.entitymanager.IEntityManager"/>
+    <classEntry path="org.dphibernate.entitymanager.EntityManager"/>
   </includeClasses>
   <includeResources>
     <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>
