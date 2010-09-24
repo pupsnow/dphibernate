@@ -1,4 +1,4 @@
-package net.digitalprimates.persistence.state
+package org.dphibernate.persistence.state
 {
 	import flexunit.framework.Assert;
 	
@@ -6,9 +6,15 @@ package net.digitalprimates.persistence.state
 	import mx.rpc.AsyncToken;
 	import mx.rpc.events.ResultEvent;
 	
+	import net.digitalprimates.persistence.state.BaseTestCase;
 	import net.digitalprimates.persistence.state.testObjects.Author;
 	import net.digitalprimates.persistence.state.testObjects.Book;
 	
+	import org.dphibernate.persistence.state.ChangeMessageGenerator;
+	import org.dphibernate.persistence.state.HibernateUpdater;
+	import org.dphibernate.persistence.state.ObjectChangeMessage;
+	import org.dphibernate.persistence.state.ObjectChangeResult;
+	import org.dphibernate.persistence.state.StateRepository;
 	import org.mockito.integrations.any;
 	import org.mockito.integrations.given;
 
@@ -46,7 +52,7 @@ package net.digitalprimates.persistence.state
 		{
 			var author:Author=getTestAuthor(mockService);
 			StateRepository.store(author);
-			var book:Book=StateRepositoryTests.getNewBook("Getting Real", author);
+			var book:Book=getNewBook("Getting Real", author);
 			author.books.addItem(book);
 			
 			var bookChanges : ObjectChangeMessage =  changeMessageGenerator.getChangesForEntityOnly( book );

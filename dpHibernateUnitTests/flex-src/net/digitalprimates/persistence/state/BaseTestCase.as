@@ -2,12 +2,13 @@ package net.digitalprimates.persistence.state
 {
 	import mx.collections.ArrayCollection;
 	
-	import net.digitalprimates.persistence.hibernate.HibernateManaged;
-	import net.digitalprimates.persistence.hibernate.IHibernateRPC;
 	import net.digitalprimates.persistence.state.testObjects.Author;
 	import net.digitalprimates.persistence.state.testObjects.Book;
 	import net.digitalprimates.persistence.state.testObjects.Publisher;
 	
+	import org.dphibernate.persistence.state.StateRepository;
+	import org.dphibernate.rpc.HibernateManaged;
+	import org.dphibernate.rpc.IHibernateRPC;
 	import org.mockito.integrations.mock;
 	
 	[RunWith("org.mockito.integrations.flexunit4.MockitoClassRunner")]
@@ -40,7 +41,7 @@ package net.digitalprimates.persistence.state
 			author.proxyKey=123;
 			author.proxyInitialized=true;
 
-			HibernateManaged.manageHibernateObject(author, null, null, service);
+			HibernateManaged.manageHibernateObject(author, null);
 
 			return author;
 		}
@@ -52,7 +53,7 @@ package net.digitalprimates.persistence.state
 			var author:Author=new Author();
 			author.proxyKey=123;
 			author.proxyInitialized=false;
-			HibernateManaged.manageHibernateObject(author, null, null, service);
+			HibernateManaged.manageHibernateObject(author, null);
 			return author;
 		}
 

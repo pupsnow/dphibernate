@@ -1,8 +1,8 @@
 package net.digitalprimates.persistence
 {
 	import net.digitalprimates.persistence.state.HibernateUpdaterTests;
-	import net.digitalprimates.persistence.state.StateRepositoryTests;
-	import net.digitalprimates.persistence.hibernate.rpc.LoadProxyRequestBufferTests;
+	import org.dphibernate.persistence.state.StateRepositoryTests;
+	import org.dphibernate.rpc.LoadProxyRequestBufferTests;
 
 	[Suite]
 	[RunWith("org.flexunit.runners.Suite")]

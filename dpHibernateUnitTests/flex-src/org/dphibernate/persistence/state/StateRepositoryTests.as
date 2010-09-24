@@ -1,4 +1,4 @@
-package net.digitalprimates.persistence.state
+package org.dphibernate.persistence.state
 {
 	import flash.utils.getDefinitionByName;
 	import flash.utils.getQualifiedClassName;
@@ -7,19 +7,16 @@ package net.digitalprimates.persistence.state
 	
 	import mx.collections.ArrayCollection;
 	
-	import net.digitalprimates.persistence.hibernate.ClassUtils;
-	import net.digitalprimates.persistence.hibernate.HibernateManaged;
-	import net.digitalprimates.persistence.hibernate.IHibernateProxy;
-	import net.digitalprimates.persistence.hibernate.IHibernateRPC;
-	import net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject;
 	import net.digitalprimates.persistence.state.testObjects.Author;
 	import net.digitalprimates.persistence.state.testObjects.Book;
-	import net.digitalprimates.persistence.state.testObjects.Publisher;
 	
+	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.util.ClassUtils;
 	import org.mockito.integrations.any;
 	import org.mockito.integrations.mock;
 	import org.mockito.integrations.never;
 	import org.mockito.integrations.verify;
+	import net.digitalprimates.persistence.state.BaseTestCase;
 	
 	[RunWith("org.mockito.integrations.flexunit4.MockitoClassRunner")]
 	public class StateRepositoryTests extends BaseTestCase

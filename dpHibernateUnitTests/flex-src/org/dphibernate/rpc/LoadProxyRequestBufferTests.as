@@ -1,10 +1,9 @@
-package net.digitalprimates.persistence.hibernate.rpc
+package org.dphibernate.rpc
 {
 	import mx.core.mx_internal;
 	import mx.rpc.AbstractOperation;
 	import mx.rpc.AsyncRequest;
 	
-	import net.digitalprimates.persistence.hibernate.HibernateProxy;
 	import net.digitalprimates.persistence.state.testObjects.Book;
 	
 	import org.flexunit.asserts.assertNotNull;

@@ -2,7 +2,8 @@ package net.digitalprimates.persistence.state.testObjects
 {
 	import mx.collections.ArrayCollection;
 	
-	import net.digitalprimates.persistence.hibernate.HibernateBean;
+	import org.dphibernate.core.HibernateBean;
+	
 	
 	[Managed]
 	[RemoteClass(alias="net.digitalprimates.persistence.hibernate.testObjects.Author")]

@@ -5,11 +5,10 @@
 	
 	<mx:Script>
 		<![CDATA[
-			import net.digitalprimates.persistence.state.HibernateUpdaterTests;
-			import net.digitalprimates.persistence.state.ObjectChangeMessageTests;
-			import net.digitalprimates.persistence.state.PropertyChangeMessageTests;
-			import net.digitalprimates.persistence.state.StateRepositoryTests;
+			import org.dphibernate.rpc.LoadProxyRequestBufferTests;
+			import org.dphibernate.persistence.state.StateRepositoryTests;
 			
+			import org.dphibernate.persistence.state.HibernateUpdaterTests;
 			import org.flexunit.listeners.UIListener;
 			import org.flexunit.runner.FlexUnitCore;
 			private var core:FlexUnitCore;
@@ -24,7 +23,7 @@
 				
 				//This run statements executes the unit tests for the FlexUnit4 framework 
 				//the Hamcrest matchers and some of the tests shown in the FlexUnit in 360 seconds blog post
-				core.run( StateRepositoryTests , HibernateUpdaterTests , ObjectChangeMessageTests , PropertyChangeMessageTests );
+				core.run( StateRepositoryTests , HibernateUpdaterTests , LoadProxyRequestBufferTests );
 				
 				//If you are interested, the original FlexUnit1 unit tests are available in
 				//a suite named AllFrameworkTests. Just add this one to the list in core.run()
