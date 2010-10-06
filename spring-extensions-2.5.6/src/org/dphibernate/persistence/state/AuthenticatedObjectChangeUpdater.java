@@ -3,8 +3,10 @@ package org.dphibernate.persistence.state;
 import java.util.List;
 import java.util.Set;
 
+import org.dphibernate.persistence.interceptors.IPostUpdateInterceptor;
 import org.dphibernate.serialization.DPHibernateCache;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -12,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
  *  Principals 
  */
 @Transactional
-public class AuthenticatedObjectChangeUpdater extends ObjectChangeUpdater
+public class AuthenticatedObjectChangeUpdater extends BaseSpringWiredObjectChangeUpdater
 {
 
 	public AuthenticatedObjectChangeUpdater() {
