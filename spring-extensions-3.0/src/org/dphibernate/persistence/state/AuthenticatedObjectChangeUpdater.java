@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
  *  Principals 
  */
 @Transactional
-public class AuthenticatedObjectChangeUpdater extends ObjectChangeUpdater
+public class AuthenticatedObjectChangeUpdater extends BaseSpringWiredObjectChangeUpdater
 {
 
 	public AuthenticatedObjectChangeUpdater() {
