@@ -61,9 +61,9 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 
 	private HashMap<IHibernateProxy, ObjectChangeMessage> entitiesAwaitingCommit = new HashMap<IHibernateProxy, ObjectChangeMessage>();
 
-	private List<IChangeMessageInterceptor> postProcessors;
+	private List<? extends IChangeMessageInterceptor> postProcessors;
 
-	private List<IChangeMessageInterceptor> preProcessors;
+	private List<? extends IChangeMessageInterceptor> preProcessors;
 
 
 	@SuppressWarnings("unchecked")
@@ -80,7 +80,7 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 
 
-	protected void applyInterceptors(ObjectChangeMessage changeMessage, List<IChangeMessageInterceptor> interceptors)
+	protected void applyInterceptors(ObjectChangeMessage changeMessage, List<? extends IChangeMessageInterceptor> interceptors)
 	{
 		if (interceptors == null)
 			return;
@@ -355,25 +355,25 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 	}
 
 
-	public void setPreProcessors(List<IChangeMessageInterceptor> preProcessors)
+	public void setPreProcessors(List<? extends IChangeMessageInterceptor> preProcessors)
 	{
 		this.preProcessors = preProcessors;
 	}
 
 
-	public List<IChangeMessageInterceptor> getPreProcessors()
+	public List<? extends IChangeMessageInterceptor> getPreProcessors()
 	{
 		return preProcessors;
 	}
 
 
-	public void setPostProcessors(List<IChangeMessageInterceptor> postProcessors)
+	public void setPostProcessors(List<? extends IChangeMessageInterceptor> postProcessors)
 	{
 		this.postProcessors = postProcessors;
 	}
 
 
-	public List<IChangeMessageInterceptor> getPostProcessors()
+	public List<? extends IChangeMessageInterceptor> getPostProcessors()
 	{
 		return postProcessors;
 	}
