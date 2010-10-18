@@ -10,7 +10,7 @@
 	<classpathentry kind="lib" path="lib/backport-util-concurrent-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/blazeds-common-3.2.0.3978.jar"/>
 	<classpathentry kind="lib" path="lib/blazeds-core-3.2.0.3978.jar" sourcepath="C:/Users/owner/.m2/repository/com/adobe/blazeds/blazeds-core/3.2.0.3978/blazeds-core-3.2.0.3978-sources.jar"/>
-	<classpathentry kind="lib" path="lib/blazeds-remoting-3.2.0.3978.jar"/>
+	<classpathentry kind="lib" path="lib/blazeds-remoting-3.2.0.3978.jar" sourcepath="C:/Users/owner/.m2/repository/com/adobe/blazeds/blazeds-remoting/3.2.0.3978/blazeds-remoting-3.2.0.3978-sources.jar"/>
 	<classpathentry kind="lib" path="lib/cglib-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/cglib-nodep-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/commons-collections-3.2.1.jar"/>

@@ -103,7 +103,7 @@ public class RemotingAdapter extends JavaAdapter implements IAdapter
 				try
 				{
 					long s1 = new Date().getTime();
-					IDeserializer deserializer = serializerFactory.getDeserializer();
+					IDeserializer deserializer = getDeserializer();
 					Object o = deserializer.translate(this, (RemotingMessage) remotingMessage.clone(), null, null, inArgs);
 					long e1 = new Date().getTime();
 					System.out.println("{deserialize} " + (e1 - s1));
@@ -146,6 +146,11 @@ public class RemotingAdapter extends JavaAdapter implements IAdapter
 		}
 
 		return results;
+	}
+
+	protected IDeserializer getDeserializer()
+	{
+		return serializerFactory.getDeserializer();
 	}
 
 	public <T extends AdapterOperation> T getOperation(Class<T> operationClass)
