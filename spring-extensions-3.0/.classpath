@@ -12,10 +12,11 @@
 	<classpathentry kind="lib" path="lib/blazeds-common-3.2.0.3978.jar"/>
 	<classpathentry kind="lib" path="lib/blazeds-core-3.2.0.3978.jar"/>
 	<classpathentry kind="lib" path="lib/blazeds-remoting-3.2.0.3978.jar"/>
-	<classpathentry kind="lib" path="lib/org.springframework.beans-3.0.3.RELEASE.jar"/>
+	<classpathentry kind="lib" path="lib/org.springframework.beans-3.0.3.RELEASE.jar" sourcepath="C:/Users/owner/.m2/repository/org/springframework/spring-beans/3.0.3.RELEASE/spring-beans-3.0.3.RELEASE-sources.jar"/>
 	<classpathentry kind="lib" path="lib/org.springframework.context-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/org.springframework.web-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="lib" path="lib/servlet-api-2.5.jar"/>
+	<classpathentry kind="lib" path="lib/org.springframework.web.servlet-3.0.3.RELEASE.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

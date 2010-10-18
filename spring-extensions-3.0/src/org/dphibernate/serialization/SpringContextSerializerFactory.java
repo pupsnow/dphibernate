@@ -20,11 +20,13 @@ package org.dphibernate.serialization;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletContext;
-
+import javax.servlet.http.HttpServletRequest;
 
 import org.hibernate.SessionFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import flex.messaging.FlexContext;
 
@@ -47,18 +49,26 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	@Override
 	public ISerializer getSerializer(Object source,boolean useAggressiveSerialization)
 	{
-		ServletContext ctx = FlexContext.getServletContext();
-		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
-		String serializerBeanName = getSerializerBeanName(springContext);
-		ISerializer serializer = (ISerializer) springContext.getBean(serializerBeanName,new Object[]{source,useAggressiveSerialization});
+		ApplicationContext context = getSpringContextForFlexContext();
+		String serializerBeanName = getSerializerBeanName(context);
+		ISerializer serializer = (ISerializer) context.getBean(serializerBeanName,new Object[]{source,useAggressiveSerialization});
 		serializer.configure(defaultConfiguration);
-		if (serializer == null)
-		{
-			throw new RuntimeException("bean named hibernateSerializerBean not found");
-		}
 		return serializer;
 	}
-	String getSerializerBeanName(WebApplicationContext context)
+	private ApplicationContext getSpringContextForFlexContext() {
+		HttpServletRequest request = FlexContext.getHttpRequest();
+		// Try to find the context for the correct DipsatcherServlet.
+		WebApplicationContext context = RequestContextUtils.getWebApplicationContext(request);
+		
+		if (context == null)
+		{
+			// Get the root instead.
+			ServletContext servletContext = FlexContext.getServletContext();
+			context= WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+		}
+		return context;
+	}
+	String getSerializerBeanName(ApplicationContext context)
 	{
 		String[] beanNames = context.getBeanNamesForType(ISerializer.class);
 		if (beanNames.length == 0)
@@ -75,17 +85,16 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	@Override
 	public IDeserializer getDeserializer()
 	{
-		ServletContext ctx = FlexContext.getServletContext();
-		WebApplicationContext springContext = WebApplicationContextUtils.getRequiredWebApplicationContext(ctx);
-		String deserializerBeanName = getDeserializerBeanName(springContext);
-		IDeserializer deserializer = (IDeserializer) springContext.getBean(deserializerBeanName);
+		ApplicationContext context = getSpringContextForFlexContext();
+		String deserializerBeanName = getDeserializerBeanName(context);
+		IDeserializer deserializer = (IDeserializer) context.getBean(deserializerBeanName);
 		if (deserializer == null)
 		{
 			deserializer = new HibernateDeserializer();
 		}
 		return deserializer;
 	}
-	String getDeserializerBeanName(WebApplicationContext context)
+	String getDeserializerBeanName(ApplicationContext context)
 	{
 		String[] beanNames = context.getBeanNamesForType(IDeserializer.class);
 		if (beanNames.length == 0)
@@ -112,5 +121,4 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	{
 		this.defaultConfiguration = configuration;
 	}
-
 }

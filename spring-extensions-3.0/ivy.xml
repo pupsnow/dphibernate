@@ -15,6 +15,7 @@ xsi:noNamespaceSchemaLocation="http://incubator.apache.org/ivy/schemas/ivy.xsd">
 		<dependency org="org.springframework" name="org.springframework.context" rev="3.0.3.RELEASE" transitive="false"/>
 		<dependency org="org.springframework" name="org.springframework.transaction" rev="3.0.3.RELEASE" transitive="false"/>
 		<dependency org="org.springframework" name="org.springframework.web" rev="3.0.3.RELEASE" transitive="false"/>
+		<dependency org="org.springframework" name="org.springframework.web.servlet" rev="3.0.3.RELEASE" transitive="false"/>
 
 		<dependency org="org.springframework.security" name="org.springframework.security.core" rev="3.0.3.RELEASE" transitive="false" />
 		<!-- Hibernate -->
