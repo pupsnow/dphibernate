@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Image xmlns:mx="http://www.adobe.com/2006/mxml"
+    initialize="loadImageFromStyle()">
+    <mx:Script>
+        <![CDATA[
+            [Bindable]
+            public var currentImageProperty:String = "src";
+
+
+            protected function loadImageFromStyle():void
+            {
+                source = getStyle(currentImageProperty);
+            }
+
+
+            override public function styleChanged(styleProp:String):void
+            {
+                super.styleChanged(styleProp);
+                if (styleProp == currentImageProperty || !styleProp)
+                    loadImageFromStyle();
+            }
+
+            override public function set styleName(value:Object):void
+            {
+                super.styleName = value;
+                loadImageFromStyle();
+            }
+        ]]>
+    </mx:Script>
+</mx:Image>
