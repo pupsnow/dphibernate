@@ -35,11 +35,14 @@
 			[Bindable]
 			public var questionList:ArrayCollection;
 
+			public function loadData():void {
+				var token:AsyncToken = dataService.getRecentPosts();
+				token.addResponder(new mx.rpc.Responder(resultHandler,faultHandler));
+			}
 			protected function resultHandler(event:ResultEvent):void
 			{
 				questionList = event.result as ArrayCollection;
 			}
-
 
 			protected function faultHandler(event:FaultEvent):void
 			{
@@ -53,8 +56,7 @@
 				// This is used by beans to perform dpHibernate operations (Save / Load, etc)
 				// where a service has not yet been assigned to the bean.
 				HibernateManaged.defaultHibernateService=dataService;
-				var token:AsyncToken = dataService.getRecentPosts();
-				token.addResponder(new mx.rpc.Responder(resultHandler,faultHandler));
+				loadData();
 			}
 		]]>
 	</fx:Script>
