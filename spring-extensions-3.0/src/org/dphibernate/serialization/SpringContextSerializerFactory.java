@@ -40,6 +40,10 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	private SessionFactory sessionFactory;
 	
 	private SerializerConfiguration defaultConfiguration;
+	
+	private ContextReference serializerContextReference;
+
+	private ContextReference deserializerContextReference;
 
 	@Override
 	public ISerializer getSerializer(Object source)
@@ -49,31 +53,78 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 	@Override
 	public ISerializer getSerializer(Object source,boolean useAggressiveSerialization)
 	{
-		ApplicationContext context = getSpringContextForFlexContext();
-		String serializerBeanName = getSerializerBeanName(context);
-		ISerializer serializer = (ISerializer) context.getBean(serializerBeanName,new Object[]{source,useAggressiveSerialization});
+		ContextReference reference = getSerializerContextReference();
+		ISerializer serializer = (ISerializer) reference.getContext().getBean(reference.getBeanName(),new Object[]{source,useAggressiveSerialization});
 		serializer.configure(defaultConfiguration);
 		return serializer;
 	}
-	private ApplicationContext getSpringContextForFlexContext() {
+	private ContextReference getSerializerContextReference() {
+		if (serializerContextReference != null)
+			return serializerContextReference;
+		
+		serializerContextReference = getContextReference(ISerializer.class);
+		if (serializerContextReference == null)
+		{
+			throw new RuntimeException("No serializer is configured in any discovered Spring context.  Ensure there is exactly one dpHibernate ISerializer defined");
+		}
+		return serializerContextReference;
+	}
+	@Override
+	public IDeserializer getDeserializer()
+	{
+		ContextReference reference = getDeserializerContextReference();
+		IDeserializer deserializer = (IDeserializer) reference.getContext().getBean(reference.getBeanName());
+		if (deserializer == null)
+		{
+			deserializer = new HibernateDeserializer();
+		}
+		return deserializer;
+	}
+	private ContextReference getDeserializerContextReference() {
+		if (deserializerContextReference != null)
+			return deserializerContextReference;
+		
+		deserializerContextReference = getContextReference(IDeserializer.class);
+		if (deserializerContextReference == null)
+		{
+			throw new RuntimeException("No deserializer is configured in any discovered Spring context.  Ensure there is exactly one dpHibernate IDeserializer defined");
+		}
+		return deserializerContextReference;
+	}
+	private ContextReference getContextReference(Class beanClass)
+	{
 		HttpServletRequest request = FlexContext.getHttpRequest();
 		// Try to find the context for the correct DipsatcherServlet.
-		WebApplicationContext context = RequestContextUtils.getWebApplicationContext(request);
-		
-		if (context == null)
+		WebApplicationContext context;
+		String beanName;
+		context = RequestContextUtils.getWebApplicationContext(request);
+		if (context != null)
 		{
-			// Get the root instead.
-			ServletContext servletContext = FlexContext.getServletContext();
-			context= WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+			beanName = getUUniqueBeanName(context, beanClass);
+			if (beanName != null)
+			{
+				return new ContextReference(beanName, context);
+			}
 		}
-		return context;
+		// Get the root instead.
+		ServletContext servletContext = FlexContext.getServletContext();
+		context= WebApplicationContextUtils.getRequiredWebApplicationContext(servletContext);
+		if (context != null)
+		{
+			beanName = getUUniqueBeanName(context,beanClass);
+			if (beanName != null)
+			{
+				return new ContextReference(beanName, context);
+			}
+		}
+		return null;
 	}
-	String getSerializerBeanName(ApplicationContext context)
+	String getUUniqueBeanName(ApplicationContext context,Class beanClass)
 	{
-		String[] beanNames = context.getBeanNamesForType(ISerializer.class);
+		String[] beanNames = context.getBeanNamesForType(beanClass);
 		if (beanNames.length == 0)
 		{
-			throw new RuntimeException("No Serializer is configured in the Spring context.  Ensure exactly one one ISerializer instance is declared");
+			return null;
 		}
 		if (beanNames.length > 1)
 		{
@@ -82,31 +133,6 @@ public class SpringContextSerializerFactory implements ISerializerFactory
 		return beanNames[0];
 	}
 
-	@Override
-	public IDeserializer getDeserializer()
-	{
-		ApplicationContext context = getSpringContextForFlexContext();
-		String deserializerBeanName = getDeserializerBeanName(context);
-		IDeserializer deserializer = (IDeserializer) context.getBean(deserializerBeanName);
-		if (deserializer == null)
-		{
-			deserializer = new HibernateDeserializer();
-		}
-		return deserializer;
-	}
-	String getDeserializerBeanName(ApplicationContext context)
-	{
-		String[] beanNames = context.getBeanNamesForType(IDeserializer.class);
-		if (beanNames.length == 0)
-		{
-			throw new RuntimeException("No Deserializer is configured in the Spring context.  Ensure exactly one one IDeserializer instance is declared");
-		}
-		if (beanNames.length > 1)
-		{
-			throw new RuntimeException("More than one deserializer is configured in the Spring context.  Ensure exactly one one IDeserializer instance is declared");
-		}
-		return beanNames[0];
-	}
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
 		this.sessionFactory = sessionFactory;
