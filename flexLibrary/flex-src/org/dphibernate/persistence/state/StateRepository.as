@@ -13,18 +13,18 @@ package org.dphibernate.persistence.state
 	import mx.utils.UIDUtil;
 	
 	import org.dphibernate.collections.ManagedArrayList;
-	import org.dphibernate.events.LazyLoadEvent;
-	import org.dphibernate.util.ClassUtils;
-	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.events.LazyLoadEvent;
+	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.rpc.IHibernateRPC;
+	import org.dphibernate.util.ClassUtils;
 	import org.dphibernate.util.LogUtil;
 
 
 	public class StateRepository
 	{
 		private static var log:ILogger=LogUtil.getLogger(StateRepository);
-		private static var changeEntries:Array=new Array(); // Hash of Key : getKey() Value : ObjectChangeMessage
+		private static var changeEntries:Object=new Object(); // Hash of Key : getKey() Value : ObjectChangeMessage
 		private static var listTable:Dictionary=new Dictionary(true) // of Key: IList , value : PropertyReference
 		private static var lazyLoadingEntities:Dictionary=new Dictionary(true);
 		private static var newEntities:Object=new Object();
@@ -112,7 +112,7 @@ package org.dphibernate.persistence.state
 			else
 			{
 				var dispatcher:IEventDispatcher=IEventDispatcher(object);
-				dispatcher.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
+//				dispatcher.addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, onPropertyChange, false, 0, true);
 				dispatcher.addEventListener(LazyLoadEvent.pending, onLazyLoadStart, false, 0, true);
 				dispatcher.addEventListener(LazyLoadEvent.complete, onLazyLoadComplete, false, 0, true);
 			}
@@ -236,13 +236,13 @@ package org.dphibernate.persistence.state
 
 		public static function reset():void
 		{
-			changeEntries=new Array();
+			changeEntries=new Object();
 			listTable=new Dictionary();
 		}
 
 		internal static function getKey(object:IHibernateProxy):String
 		{
-			return ClassUtils.getRemoteClassName(object) + "::" + object.proxyKey;
+			return ClassUtils.getRemoteClassName(object) + "_" + object.proxyKey;
 		}
 
 		public static function hasChangedProperty(object:IHibernateProxy, propertyName:String):Boolean
@@ -305,7 +305,7 @@ package org.dphibernate.persistence.state
 			storeChange(proxy, event.property as String, event.oldValue, event.newValue);
 		}
 
-		private static function storeChange(proxy:IHibernateProxy, propertyName:String, oldValue:Object, newValue:Object):void
+		public static function storeChange(proxy:IHibernateProxy, propertyName:String, oldValue:Object, newValue:Object):void
 		{
 			if (ignoreProperty(proxy, propertyName))
 				return;
@@ -512,7 +512,7 @@ package org.dphibernate.persistence.state
 		}
 		public static function newObjectSaveCompleted(changeResult:ObjectChangeResult):void
 		{
-			var oldKey : String = changeResult.remoteClassName + "::" + changeResult.oldId;
+			var oldKey : String = changeResult.remoteClassName + "_" + changeResult.oldId;
 			var proxy : IHibernateProxy = getStoredObject( oldKey );
 			if ( proxy )
 			{

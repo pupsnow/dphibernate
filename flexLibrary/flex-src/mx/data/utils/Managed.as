@@ -20,8 +20,9 @@
 package mx.data.utils {
 	import mx.data.IManaged;
 	
-	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.persistence.state.StateRepository;
+	import org.dphibernate.rpc.HibernateManaged;
 	
 
 	public class Managed extends Object {
@@ -35,7 +36,12 @@ package mx.data.utils {
 
 		public static function setProperty(obj:IManaged, property:Object, oldValue:*, newValue:* ):void {
 			if ( obj is IHibernateProxy ) {
-				HibernateManaged.setProperty(obj as IHibernateProxy, property, oldValue, newValue );
+				var proxy:IHibernateProxy = obj as IHibernateProxy;
+				HibernateManaged.setProperty(proxy, property, oldValue, newValue );
+				if (StateRepository.contains(proxy))
+				{
+					StateRepository.storeChange(proxy,property as String,Object(oldValue),Object(newValue));
+				}
 			}
 		}
 	}
