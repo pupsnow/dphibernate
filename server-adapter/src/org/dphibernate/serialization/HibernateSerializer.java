@@ -76,7 +76,7 @@ import flex.messaging.io.amf.ASObject;
 @SuppressWarnings("unchecked")
 public class HibernateSerializer extends AbstractSerializer
 {
-	private static final Log log = LogFactory.getLog(CopyOfHibernateSerializer.class);
+	private static final Log log = LogFactory.getLog(HibernateSerializer.class);
 	public static Dialect dialect;
 
 
@@ -637,22 +637,22 @@ public class HibernateSerializer extends AbstractSerializer
 
 	private Dialect getDialect()
 	{
-		if (CopyOfHibernateSerializer.dialect == null)
+		if (HibernateSerializer.dialect == null)
 		{
 			try
 			{
-				CopyOfHibernateSerializer.dialect = Dialect.getDialect();
+				HibernateSerializer.dialect = Dialect.getDialect();
 			} catch (Throwable t)
 			{
 				SessionFactoryImpl sfi = (SessionFactoryImpl) sessionFactory;
-				CopyOfHibernateSerializer.dialect = sfi.getDialect();
+				HibernateSerializer.dialect = sfi.getDialect();
 			}
-			if (CopyOfHibernateSerializer.dialect == null)
+			if (HibernateSerializer.dialect == null)
 			{
 				throw new RuntimeException("Could not determine dialect");
 			}
 		}
-		return CopyOfHibernateSerializer.dialect;
+		return HibernateSerializer.dialect;
 
 	}
 
