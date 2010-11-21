@@ -4,8 +4,12 @@ package org.dphibernate.persistence.state
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
 	
+	import flashx.textLayout.edit.IEditManager;
+	
 	import mx.collections.ArrayCollection;
 	import mx.collections.IList;
+	import mx.data.IManaged;
+	import mx.data.utils.Managed;
 	import mx.events.CollectionEvent;
 	import mx.events.CollectionEventKind;
 	import mx.events.PropertyChangeEvent;
@@ -14,6 +18,7 @@ package org.dphibernate.persistence.state
 	
 	import org.dphibernate.collections.ManagedArrayList;
 	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.entitymanager.IEntityManager;
 	import org.dphibernate.events.LazyLoadEvent;
 	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.rpc.IHibernateRPC;
@@ -28,6 +33,7 @@ package org.dphibernate.persistence.state
 		private static var listTable:Dictionary=new Dictionary(true) // of Key: IList , value : PropertyReference
 		private static var lazyLoadingEntities:Dictionary=new Dictionary(true);
 		private static var newEntities:Object=new Object();
+		private static var keyToUIDMap:Object = new Object();
 
 		public static var ignorePropertyChanges:Boolean=false;
 
@@ -118,10 +124,14 @@ package org.dphibernate.persistence.state
 			}
 			var descriptor:HibernateProxyDescriptor=new HibernateProxyDescriptor(object);
 			changeEntries[key]=new ObjectChangeMessage(descriptor, objectIsNew);
+			if (object is IManaged)
+			{
+				keyToUIDMap[key] = IManaged(object).uid;
+			}
 			storeComplexProperties(object);
 			return key;
 		}
-
+		
 		/**
 		 * Iterates the properties of object, and stores the baseline of all lists and
 		 * properties with a type of IHibernateProxy */
@@ -189,12 +199,18 @@ package org.dphibernate.persistence.state
 				return;
 
 			delete changeEntries[oldKey];
+			
 			log.info("Updated key for store repository.  Was: {0}  Now: {1}", oldKey, newKey);
 
 			// Because the key has changed, we need to update the owner reference
 			var proxyOwner:HibernateProxyDescriptor=new HibernateProxyDescriptor(object);
 			oldValue.owner=proxyOwner;
 			changeEntries[newKey]=oldValue;
+			if (object is IManaged)
+			{
+				delete keyToUIDMap[oldKey];
+				keyToUIDMap[newKey] = IManaged(object).uid;
+			}
 		}
 
 		private static function resetStateOnChildren(object:IHibernateProxy, recursionTracker:ArrayCollection):void
@@ -226,7 +242,19 @@ package org.dphibernate.persistence.state
 
 		public static function contains(object:IHibernateProxy):Boolean
 		{
-			return containsByKey(getKey(object));
+			var key:String = getKey(object);
+			var containsForEntity:Boolean = containsByKey(key);
+			if (containsForEntity && object is IManaged)
+			{
+				var containsForInstance:Boolean = keyToUIDMap[key] == IManaged(object).uid;
+				if (containsForEntity && !containsForInstance)
+				{
+					log.warn("Entity instance mismatch.  State repository contains an entity for " + key + " but it is not the instance passed.  Changes are tracked on a single instance only.");
+					return false;
+				}
+			}
+			return containsForEntity;
+			
 		}
 
 		internal static function containsByKey(key:String):Boolean
@@ -240,9 +268,13 @@ package org.dphibernate.persistence.state
 			listTable=new Dictionary();
 		}
 
-		internal static function getKey(object:IHibernateProxy):String
+		public static function getKey(object:IHibernateProxy):String
 		{
 			return ClassUtils.getRemoteClassName(object) + "_" + object.proxyKey;
+		}
+		public static function getKeyForDescriptor(descriptor:IHibernateProxyDescriptor):String
+		{
+			return descriptor.remoteClassName + "_" + descriptor.proxyId;
 		}
 
 		public static function hasChangedProperty(object:IHibernateProxy, propertyName:String):Boolean
@@ -307,6 +339,8 @@ package org.dphibernate.persistence.state
 
 		public static function storeChange(proxy:IHibernateProxy, propertyName:String, oldValue:Object, newValue:Object):void
 		{
+			if (ignorePropertyChanges)
+				return;
 			if (ignoreProperty(proxy, propertyName))
 				return;
 			if (isLazyLoading(proxy))
@@ -407,6 +441,11 @@ package org.dphibernate.persistence.state
 				for each (var item:IHibernateProxy in event.items)
 				{
 					generateFullChangeMessage(item);
+					// For testing:
+					if (!contains(item))
+					{
+						throw new Error("Assertion failed: Added item, but contains == false");
+					}
 				}
 			}
 			var list:IList=event.target as IList;
@@ -526,6 +565,37 @@ package org.dphibernate.persistence.state
 			}
 		}
 		
+		public static function applyChangeMessage(changeMessage:ObjectChangeMessage):void
+		{
+			var entityManager:IEntityManager = HibernateManaged.entityManager;
+			if (!entityManager)
+				throw new Error("No entity manager found");
+			
+			var entity:IHibernateProxy = entityManager.findForDescriptor(changeMessage.owner);
+			if (!entity)
+			{
+				log.error("Cannot apply change message for entity " + getKeyForDescriptor(changeMessage.owner) + " as it was not found in the EntityManager");
+				return;
+			}
+			
+			var oldIgnorePropertyChanges:Boolean = ignorePropertyChanges;
+			ignorePropertyChanges = true;
+			
+			// TODO : Detect conflicts on the client..
+			
+			for each (var propertyChange:PropertyChangeMessage in changeMessage.changedProperties)
+			{
+				applyPropertyChangeMessage(entity,propertyChange);
+			}
+			
+			ignorePropertyChanges = oldIgnorePropertyChanges;
+		}
+		protected static function applyPropertyChangeMessage(entity:IHibernateProxy,propertyChange:PropertyChangeMessage):void
+		{
+			var propertyName:String = propertyChange.propertyName;
+			// This needs some fleshing out...
+			entity[propertyName] = propertyChange.newValue;
+		}
 
 	}
 }

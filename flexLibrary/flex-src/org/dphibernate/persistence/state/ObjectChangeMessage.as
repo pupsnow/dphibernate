@@ -1,13 +1,11 @@
 package org.dphibernate.persistence.state
 {
-	
-	
-	
+	import mx.collections.ArrayCollection;
 
     [RemoteClass(alias="org.dphibernate.persistence.state.ObjectChangeMessage")]
     public class ObjectChangeMessage
     {
-        public function ObjectChangeMessage(owner:IHibernateProxyDescriptor, isNew:Boolean = false)
+        public function ObjectChangeMessage(owner:IHibernateProxyDescriptor=null, isNew:Boolean = false)
         {
             _owner = owner;
             _isNew = isNew;
@@ -67,25 +65,26 @@ package org.dphibernate.persistence.state
 
         public function set isNew(value:Boolean):void
         {
-            throw new ReadOnlyError();
+			var e:Error = new ReadOnlyError();
+            throw e;
         }
 		internal function setIsNotNew():void
 		{
 			_isNew = false;
 		}
 
-        private var _changedProperties:Array; // Cached table
+        private var _changedProperties:ArrayCollection; // Cached table
 
-        public function get changedProperties():Array
+        public function get changedProperties():ArrayCollection
         {
             if (!_changedProperties)
             {
-                var result:Array = new Array();
+                var result:ArrayCollection = new ArrayCollection();
                 for (var propertyName:String in _changedPropertiesTable)
                 {
                     if (_changedPropertiesTable[propertyName] is PropertyChangeMessage)
                     {
-                        result.push(_changedPropertiesTable[propertyName]);
+                        result.addItem(_changedPropertiesTable[propertyName]);
                     }
                 }
                 _changedProperties = result;
@@ -93,9 +92,15 @@ package org.dphibernate.persistence.state
             return _changedProperties;
         }
 
-        public function set changedProperties(value:Array):void
+        public function set changedProperties(value:ArrayCollection):void
         {
-            throw new ReadOnlyError();
+			_changedPropertiesTable = new Object();
+			for each (var propertyChange:PropertyChangeMessage in value)
+			{
+				var propertyName:String = propertyChange.propertyName;
+				_changedPropertiesTable[propertyChange] = propertyChange;
+			}
+			_changedProperties = value;
         }
 
         public function addChange(change:PropertyChangeMessage):void
@@ -157,7 +162,7 @@ package org.dphibernate.persistence.state
 				removePropertyChangeMessage(propertyChangeMessage);
 			}
 		}
-		public function markPropertyChangeMessagesUpdated(messages:Array):void
+		public function markPropertyChangeMessagesUpdated(messages:ArrayCollection):void
 		{
 			for each ( var message:PropertyChangeMessage in messages)
 			{

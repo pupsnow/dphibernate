@@ -37,21 +37,23 @@ package org.dphibernate.rpc
 	import mx.utils.DescribeTypeCacheRecord;
 	import mx.utils.ObjectUtil;
 	
-	import org.dphibernate.util.BeanUtil;
 	import org.dphibernate.collections.ManagedArrayList;
+	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.entitymanager.IEntityManager;
 	import org.dphibernate.events.LazyLoadEvent;
 	import org.dphibernate.persistence.state.StateRepository;
+	import org.dphibernate.util.BeanUtil;
 	import org.dphibernate.util.LogUtil;
-	import org.dphibernate.core.IHibernateProxy;
 
 	public class HibernateManaged
 	{
 		public static const PROXY_LOAD_METHOD:String="loadDPProxy";
 
 		public static const PROXY_SAVE_METHOD:String="saveDPProxy";
-		
-		public static var hibernateRPCProvider:IHibernateROProvider = new DefaultHibernateRPCProvider();
-		
+
+		public static var hibernateRPCProvider:IHibernateROProvider=new DefaultHibernateRPCProvider();
+		public static var entityManager:IEntityManager;
+
 		protected static var recursionWatch:Dictionary=new Dictionary(true);
 
 		protected static var pendingDictionary:Dictionary=new Dictionary(true);
@@ -76,6 +78,14 @@ package org.dphibernate.rpc
 
 		private static function manageChildHibernateObjects(object:Object, parent:Object=null, propertyName:String=null):void
 		{
+			// Check to see if the object is in the entityManager
+			if (parent && propertyName && entityManager && object is IHibernateProxy && entityManager.containsEntity(object as IHibernateProxy))
+			{
+				var entityManagerInstance:IHibernateProxy = entityManager.getEntity(object as IHibernateProxy);
+				parent[propertyName] = entityManagerInstance;
+				return;
+			}
+
 			// TODO : MP : From what I can tell, we walk the full tree here, recursively
 			// calling manageChildHibernateObjects().  However, almost everything
 			// that was performed here is now not required.
@@ -87,6 +97,8 @@ package org.dphibernate.rpc
 			// from mx.collections.ArrayCollection to org.dphibernate.collections.ManagedCollection
 			// (given ManagedCollection extends ArrayCollection)
 			// Then, we don't need any of this.
+			
+				
 			var entry:XML;
 			var accessors:XMLList
 
@@ -112,9 +124,12 @@ package org.dphibernate.rpc
 
 			if (object is IHibernateProxy)
 			{
-				manageHibernateObject(IHibernateProxy(object), parent);
+				var proxy:IHibernateProxy = IHibernateProxy(object);
+				manageHibernateObject(proxy, parent);
 
-				if (IHibernateProxy(object).proxyInitialized)
+				if (entityManager)
+					updateEntityManager(proxy);
+				if (proxy.proxyInitialized)
 				{
 					for (var k:int=0; k < accessors.length(); k++)
 					{
@@ -143,7 +158,18 @@ package org.dphibernate.rpc
 				}
 			}
 		}
-
+		protected static function updateEntityManager(object:Object):void
+		{
+			if (!object) return;
+			if (!(object is IHibernateProxy)) return;
+			var proxy:IHibernateProxy = object as IHibernateProxy;
+			if (!entityManager.containsEntity(proxy))
+			{
+				entityManager.putEntity(proxy);
+			} else {
+				trace("WARNING:  Received updated entity from server when client version already exists.  Entity merging not yet supported");
+			}
+		}
 		public static function manageArrayCollection(collection:ArrayCollection):void
 		{
 			if (collection.list is ManagedArrayList)
@@ -178,15 +204,16 @@ package org.dphibernate.rpc
 				(obj as IPropertyChangeNotifier).addEventListener(PropertyChangeEvent.PROPERTY_CHANGE, parent.dispatchEvent);
 			}
 		}
-		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String,value:*=null):*
+
+		protected static function getLazyDataFromServer(obj:IHibernateProxy, property:String, value:*=null):*
 		{
 			var lazyLoadResponder:Responder=new Responder(HibernateManaged.lazyLoadArrived, HibernateManaged.lazyLoadFailed);
 
 			var token:AsyncToken;
-			var remoteObject:IHibernateRPC = hibernateRPCProvider.getRemoteObject(obj);
+			var remoteObject:IHibernateRPC=hibernateRPCProvider.getRemoteObject(obj);
 			token=remoteObject.loadProxy(obj.proxyKey, obj);
-			
-			token.ro = remoteObject;
+
+			token.ro=remoteObject;
 			token.addResponder(lazyLoadResponder);
 			token.obj=obj;
 			token.property=property;
@@ -194,9 +221,9 @@ package org.dphibernate.rpc
 
 			token.oldValue=obj;
 			/*
-			token.parent=hibernateDictionary[obj].parent;
-			token.parentProperty=hibernateDictionary[obj].parentProperty;
-			*/
+			   token.parent=hibernateDictionary[obj].parent;
+			   token.parentProperty=hibernateDictionary[obj].parentProperty;
+			 */
 			trace("Asking for Lazy Data for Property " + token.parentProperty);
 
 
@@ -215,23 +242,18 @@ package org.dphibernate.rpc
 
 		public static function getProperty(obj:IHibernateProxy, property:String, value:*):*
 		{
-
-			var ro:IHibernateRPC = hibernateRPCProvider.getRemoteObject(obj);
 			if (obj.proxyInitialized)
-			{
 				return value;
+
+			var ro:IHibernateRPC=hibernateRPCProvider.getRemoteObject(obj);
+			if (!pendingDictionary[obj] && ro.enabled)
+			{
+				pendingDictionary[obj]=true;
+				return getLazyDataFromServer(obj, property, value);
 			}
 			else
 			{
-				if (!pendingDictionary[obj] && ro.enabled)
-				{
-					pendingDictionary[obj]=true;
-					return getLazyDataFromServer(obj, property,value);
-				}
-				else
-				{
-					return value;
-				}
+				return value;
 			}
 		}
 
@@ -264,22 +286,22 @@ package org.dphibernate.rpc
 
 		public static function lazyLoadArrived(event:ResultEvent):void
 		{
-			var methodSw:StopWatch = StopWatch.startNew("lazyLoadArrived");
+			var methodSw:StopWatch=StopWatch.startNew("lazyLoadArrived");
 			var token:AsyncToken=event.token;
 
 			delete pendingDictionary[token.obj];
 
 			var classDef:Class=getDefinitionByName(getQualifiedClassName(token.obj)) as Class;
-			var ro:IHibernateRPC = token.ro;
-			ro.enabled = false;
+			var ro:IHibernateRPC=token.ro;
+			ro.enabled=false;
 			token.obj.proxyInitialized=true;
 
 			StateRepository.ignorePropertyChanges=true;
-			var sw:StopWatch = StopWatch.startNew("BeanUtil.populateBean");
+			var sw:StopWatch=StopWatch.startNew("BeanUtil.populateBean");
 			BeanUtil.populateBean(event.result, classDef, token.obj, new Dictionary(true), token.parent);
 			sw.stopAndTrace();
 			StateRepository.ignorePropertyChanges=false;
-			ro.enabled = true;
+			ro.enabled=true;
 			setProperty(token.obj, token.property, token.oldValue, event.result, token.parent)
 
 			if (token.obj is IEventDispatcher)
@@ -308,17 +330,20 @@ package org.dphibernate.rpc
 			token.addResponder(managedResponder);
 		}
 
+		/**
+		 * This method is called when any arbitary remote method invocation has completed.
+		 * For lazyLoad operations, see lazyLoadArrived */
 		protected static function handleHibernateResult(event:ResultEvent):void
 		{
-			var sw:StopWatch = StopWatch.startNew("handleHibernateResult");
+			var sw:StopWatch=StopWatch.startNew("handleHibernateResult");
 			var remoteService:IHibernateRPC=IHibernateRPC(event.token.ro);
-			remoteService.enabled = false;
+			remoteService.enabled=false;
 			manageChildTree(event.result, null, null);
 			if (remoteService.stateTrackingEnabled)
 			{
 				manageStateOfResultObject(event);
 			}
-			remoteService.enabled = true;
+			remoteService.enabled=true;
 			sw.stopAndTrace();
 		}
 
@@ -333,9 +358,10 @@ package org.dphibernate.rpc
 				StateRepository.storeList(event.result as IList);
 			}
 		}
+
 		protected static function handleHibernateFault(event:FaultEvent):void
 		{
-			trace("Something bad happend\n" + event.fault.faultString);
+			log.error("Fault when attempting dpHibernate operation: " + event.fault.faultString);
 		}
 
 

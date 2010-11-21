@@ -11,11 +11,11 @@ package org.dphibernate.util
 	import mx.utils.ObjectUtil;
 	
 	import org.dphibernate.core.HibernateBean;
-	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.core.IHibernateProxy;
-	import org.dphibernate.rpc.IHibernateRPC;
 	import org.dphibernate.rpc.CustomBeanPopulatorRegistry;
+	import org.dphibernate.rpc.HibernateManaged;
 	import org.dphibernate.rpc.IBeanPopulator;
+	import org.dphibernate.rpc.IHibernateRPC;
 	
 
 	public class BeanUtil
@@ -108,11 +108,10 @@ package org.dphibernate.util
 				if ( !IHibernateProxy( source ).proxyInitialized ) {
 					//if we are not initialized, do not dive any deeper, you will cause Hibernate to lazy load by any of these
 					//actions
-
 					return;
 				}
 			} 
-			
+				
 			for ( var i:int=0; i<accessors.length(); i++ ) {			
 						
 				property = accessors[i].@name;

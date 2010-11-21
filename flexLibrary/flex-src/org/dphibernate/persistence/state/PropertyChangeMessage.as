@@ -5,7 +5,7 @@ package org.dphibernate.persistence.state
 	[RemoteClass(alias="org.dphibernate.persistence.state.PropertyChangeMessage")]
 	public class PropertyChangeMessage
 	{
-		public function PropertyChangeMessage( propertyName : String , oldValue : Object , newValue : Object ) 
+		public function PropertyChangeMessage( propertyName : String = null , oldValue : Object = null , newValue : Object = null) 
 		{
 			_propertyName = propertyName;
 			_oldValue = oldValue;
@@ -28,7 +28,7 @@ package org.dphibernate.persistence.state
 		}
 		public function set propertyName( value : String ) : void
 		{
-			throw new ReadOnlyError();
+			this._propertyName = value;
 		}
 		public function get oldValue() : Object
 		{
@@ -36,7 +36,7 @@ package org.dphibernate.persistence.state
 		}
 		public function set oldValue( value : Object ) : void
 		{
-			throw new ReadOnlyError();
+			this._oldValue = value;
 		}
 		public function get newValue() : Object
 		{
@@ -44,7 +44,7 @@ package org.dphibernate.persistence.state
 		}
 		public function set newValue( value : Object ) : void
 		{
-			throw new ReadOnlyError();
+			_newValue = value;
 		}
 		public function get oldAndNewValueMatch() : Boolean
 		{

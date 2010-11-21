@@ -1,16 +1,15 @@
 package org.dphibernate.persistence.state
 {
-	import org.dphibernate.util.ClassUtils;
 	import org.dphibernate.core.IHibernateProxy;
+	import org.dphibernate.util.ClassUtils;
 	
 	[RemoteClass(alias="org.dphibernate.persistence.state.HibernateProxyDescriptor")]	
 	public class HibernateProxyDescriptor implements IHibernateProxyDescriptor
 	{
-		public function HibernateProxyDescriptor( source : IHibernateProxy )
+		public function HibernateProxyDescriptor( source : IHibernateProxy = null )
 		{
 			_remoteClassName = ClassUtils.getRemoteClassName( source );
-			_proxyId = source.proxyKey;
-			_source = source;
+			this.source = source;
 		}
 		private var _remoteClassName : String;
 		public function get remoteClassName():String
@@ -35,6 +34,12 @@ package org.dphibernate.persistence.state
 		public function get source() : IHibernateProxy
 		{
 			return _source;
+		}
+		public function set source(value:IHibernateProxy):void
+		{
+			_source = value;
+			if (source)
+				_proxyId = source.proxyKey;
 		}
 	}
 }

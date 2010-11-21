@@ -232,6 +232,8 @@ public class ObjectChangeUpdater implements IObjectChangeUpdater
 		changeMessagesToProcess.removeAll(newObjects);
 		result.addAll(doUpdate(changeMessagesToProcess));
 		
+		sessionFactory.getCurrentSession().flush();
+		
 		applyPostProcessors(changeMessages);
 		return result;
 	}

@@ -264,8 +264,11 @@ public class HibernateSerializer extends AbstractSerializer
 			cache.store(cacheKey, asObject);
 
 			asObject.setType(getClassName(obj));
-			asObject.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
-			asObject.put(HibernateProxyConstants.PROXYINITIALIZED, true);
+			if (obj instanceof IHibernateProxy)
+			{
+				asObject.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
+				asObject.put(HibernateProxyConstants.PROXYINITIALIZED, true);
+			}
 			
 			// TODO : This chunk of code is being progressively moved to PropertyHelper.java
 			// However, we need better test coverage of this method before I'm comfortable just ripping it out
