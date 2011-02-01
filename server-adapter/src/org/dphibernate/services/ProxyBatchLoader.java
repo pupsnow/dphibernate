@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 
 import org.dphibernate.core.DPHibernateException;
 import org.dphibernate.core.IHibernateProxy;
+import org.dphibernate.utils.ProxyUtil;
 import org.hibernate.Criteria;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
@@ -90,6 +91,7 @@ public class ProxyBatchLoader implements IProxyBatchLoader
 	}
 
 
+	@SuppressWarnings("unchecked")
 	private List<Object> loadEntities(Entry<String, Collection<Serializable>> requestClassEntry)
 	{
 		Class<?> requestClass = getRequestClass(requestClassEntry.getKey());
@@ -124,8 +126,12 @@ public class ProxyBatchLoader implements IProxyBatchLoader
 		ArrayListMultimap<String, Serializable> requestsByClass = ArrayListMultimap.create();
 		for (ProxyLoadRequest request : requests)
 		{
-			requestsByClass.put(request.getClassName(), request.getProxyID());
+			// Convert proxyID in the ProxyLoadRequest to the type defined in the entity object.
+			Serializable proxyID = ProxyUtil.convertProxyIdInProxyLoadRequestToEntityIdType(request, sessionFactory);			
+			requestsByClass.put(request.getClassName(), proxyID);
 		}
 		return requestsByClass.asMap();
 	}
+	
+
 }

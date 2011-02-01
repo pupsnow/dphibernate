@@ -3,8 +3,8 @@ package org.dphibernate.services;
 import java.io.Serializable;
 import java.util.Map;
 
-
 import org.dphibernate.serialization.PropertyHelper;
+import org.dphibernate.utils.ProxyUtil;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,11 @@ public class ProxyLoadService implements IProxyLoadService
 			String originalId = (String) id;
 			id = Integer.parseInt((String) id);
 		}
-		Object result = sessionFactory.getCurrentSession().get(daoClass, id);
+		
+		// Convert id to the type defined in the entity object.
+		Serializable proxyID = ProxyUtil.convertProxyIdToEntityIdType(id, daoClass, sessionFactory);
+		
+		Object result = sessionFactory.getCurrentSession().get(daoClass, proxyID);
 		return result;
 	}
 
