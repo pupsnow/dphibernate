@@ -1,22 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<flexLibProperties version="1">
+<flexLibProperties includeAllClasses="true" version="3">
   <includeClasses>
-    <classEntry path="mx.data.IManaged"/>
-    <classEntry path="mx.data.utils.Managed"/>
-    <classEntry path="net.digitalprimates.flex2.mx.utils.ValueObjectUtil"/>
-    <classEntry path="net.digitalprimates.persistence.events.LazyLoadEvent"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateBean"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManaged"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateManagedEntry"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.HibernateProxy"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateProxy"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.IHibernateRPC"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.loader.LazyLoader"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.manager.HibernateManager"/>
+    <classEntry path="net.digitalprimates.persistence.entity.proxy.EntityProxyBuilder"/>
+    <classEntry path="net.digitalprimates.persistence.entity.IEntity"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.IHibernateRPC"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.manager.HibernateEntityManager"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.EntityMapResponder"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.introduction.IManagedEntity"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.loader.LazyLoadEvent"/>
+    <classEntry path="net.digitalprimates.persistence.entity.manager.IEntityManager"/>
   </includeClasses>
-  <includeResources>
-    <resourceEntry destPath="dp-manifest.xml" sourcePath="dp-manifest.xml"/>
-  </includeResources>
-  <namespaceManifests>
-    <namespaceManifestEntry manifest="dp-manifest.xml" namespace="http://www.digitalprimates.net/2007/mxml"/>
-  </namespaceManifests>
+  <includeResources/>
+  <namespaceManifests/>
 </flexLibProperties>
