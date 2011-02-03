@@ -193,6 +193,10 @@ public class HibernateSerializer extends AbstractSerializer
 		} else if (objectToSerialize instanceof AbstractPersistentCollection)
 		{
 			result = writeAbstractPersistentCollection((AbstractPersistentCollection) objectToSerialize, cacheKey, eagerlySerialize);
+		} else if (objectToSerialize instanceof byte[]) 
+		{
+		  cache.store(cacheKey, objectToSerialize);
+		  result = objectToSerialize;
 		} else if (objectToSerialize.getClass().isArray())
 		{
 			result = writeArray((Object[]) objectToSerialize, cacheKey);
