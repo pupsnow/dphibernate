@@ -39,10 +39,13 @@ package net.digitalprimates.persistence.hibernate.rpc {
 	import net.digitalprimates.persistence.entity.IEntity;
 	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
 	import net.digitalprimates.persistence.hibernate.manager.HibernateEntityManager;
+	import net.digitalprimates.persistence.hibernate.manager.HibernateManager;
 	
+	import org.as3commons.bytecode.abc.enum.NamespaceKind;
+	import org.as3commons.bytecode.reflect.ByteCodeType;
+	import org.as3commons.bytecode.reflect.IVisibleMember;
 	import org.as3commons.reflect.Accessor;
 	import org.as3commons.reflect.Field;
-	import org.as3commons.reflect.Type;
 	
 	public class HibernateEntityMapResponder implements IResponder {
 		
@@ -92,7 +95,9 @@ package net.digitalprimates.persistence.hibernate.rpc {
 		}
 		
 		private function updateEntity( entity:IHibernateManagedEntity, parent:IEntity, manager:HibernateEntityManager ):void {
-			var type:Type = Type.forInstance( entity );
+			//temporary
+			var proxiedClass:Class = HibernateManager.getProxiedClass( entity );
+			var type:ByteCodeType = ByteCodeType.forInstance( proxiedClass );
 			var field:Field;
 			var propValue:*;
 			
@@ -112,9 +117,9 @@ package net.digitalprimates.persistence.hibernate.rpc {
 				for ( var i:int=0; i<properties.length; i++ ) {
 					field = properties[ i ] as Field;
 					
-					//Bad but just don't know how to check what is private or public right now
-					if ( ( field.name != 'prototype' ) && ( field.name != 'methodInvocationInterceptor' ) ) {
+					if ( ( field is IVisibleMember ) && ( ( field as IVisibleMember ).visibility == NamespaceKind.PACKAGE_NAMESPACE ) ) {
 						propValue = field.getValue( entity );
+						
 						if ( propValue is IHibernateManagedEntity ) {
 							updateEntity( propValue, entity, manager );
 						} else if ( propValue is ICollectionView ) {
@@ -124,6 +129,7 @@ package net.digitalprimates.persistence.hibernate.rpc {
 						} else if ( field.type is Object ) {
 							updateMap( propValue, manager );
 						}
+						
 					}
 				}
 			}

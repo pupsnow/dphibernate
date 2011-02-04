@@ -31,13 +31,14 @@ package net.digitalprimates.persistence.hibernate.proxy {
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.net.registerClassAlias;
+	import flash.utils.Dictionary;
 	
 	import net.digitalprimates.persistence.entity.IEntityObjectManager;
-	import net.digitalprimates.persistence.hibernate.HibernateConstants;
-	import net.digitalprimates.persistence.hibernate.manager.HibernateObjectManagerImpl;
-	import net.digitalprimates.persistence.hibernate.interceptor.HibernateEntityInterceptor;
 	import net.digitalprimates.persistence.entity.interceptor.EntityInterceptorFactory;
+	import net.digitalprimates.persistence.hibernate.HibernateConstants;
+	import net.digitalprimates.persistence.hibernate.interceptor.HibernateEntityInterceptor;
 	import net.digitalprimates.persistence.hibernate.introduction.HibernateIntroduction;
+	import net.digitalprimates.persistence.hibernate.manager.HibernateObjectManagerImpl;
 	
 	import org.as3commons.bytecode.emit.IAbcBuilder;
 	import org.as3commons.bytecode.emit.IClassBuilder;
@@ -50,16 +51,16 @@ package net.digitalprimates.persistence.hibernate.proxy {
 	import org.as3commons.bytecode.reflect.ByteCodeType;
 	import org.as3commons.reflect.Metadata;
 	import org.as3commons.reflect.MetadataArgument;
-	import org.as3commons.reflect.Type;
 
 	[Event(name="complete", type="flash.events.Event")]
 	[Event(name="verifyError", type="flash.events.IOErrorEvent")]
 	public class HibernateEntityProxyBuilder extends EventDispatcher {
 		private var loaderInfo:LoaderInfo;
 		private var proxyFactory:IProxyFactory;
+		private var mapping:Dictionary;
 
 		private function initStructures():void {
-			ByteCodeType.fromLoader(loaderInfo);
+			ByteCodeType.fromLoader( loaderInfo );
 		}
 
 		private function findEntityNames():Array {
@@ -67,11 +68,11 @@ package net.digitalprimates.persistence.hibernate.proxy {
 		}
 
 		private function defineEntity(entityName:String, factory:IProxyFactory, objectManager:IEntityObjectManager):void {
-			var type:Type;
+			var type:ByteCodeType;
 			var classProxyInfo:IClassProxyInfo;
 
-			type = Type.forName(entityName);
-			classProxyInfo = factory.defineProxy(type.clazz);
+			type = ByteCodeType.forName( entityName );
+			classProxyInfo = factory.defineProxy( type.clazz );
 			classProxyInfo.proxyAccessorScopes = ProxyScope.PUBLIC;
 			classProxyInfo.proxyMethodScopes = ProxyScope.NONE;
 			classProxyInfo.introduce(HibernateIntroduction);
@@ -79,17 +80,19 @@ package net.digitalprimates.persistence.hibernate.proxy {
 		}
 
 		private function registerProxyClassReplacements():void {
-			var type:Type;
+			var type:ByteCodeType;
 			var definitionNames:Array = findEntityNames();
 			var proxyClass:Class;
 			var alias:String;
 
 			for (var i:int = 0; i < definitionNames.length; i++) {
-				type = Type.forName(definitionNames[i]);
+				type = ByteCodeType.forName( definitionNames[i] );
 				trace("Registering " + type.name);
 
 				proxyClass = getEntityClass(type.clazz);
 				alias = getRemoteAlias(type);
+				
+				mapping[ proxyClass ] = type.clazz;
 
 				if (alias && proxyClass) {
 					registerClassAlias(alias, proxyClass);
@@ -97,8 +100,8 @@ package net.digitalprimates.persistence.hibernate.proxy {
 			}
 		}
 
-		private function getRemoteAlias(type:Type):String {
-			var ar:Array = type.getMetadata(HibernateConstants.REMOTE_CLASS);
+		private function getRemoteAlias( type:ByteCodeType ):String {
+			var ar:Array = type.getMetadata( HibernateConstants.REMOTE_CLASS );
 			var remoteAlias:String;
 
 			if (ar) {
@@ -135,6 +138,12 @@ package net.digitalprimates.persistence.hibernate.proxy {
 
 			return proxyClass;
 		}
+		
+		public function getProxiedClass( instance:* ):Class {
+			var proxy:Class = instance.constructor;
+			
+			return mapping[ proxy ];
+		}
 
 		public function manageEntities():void {
 			var definitionNames:Array;
@@ -170,6 +179,7 @@ package net.digitalprimates.persistence.hibernate.proxy {
 			this.loaderInfo = loaderInfo;
 			proxyFactory = new ProxyFactory();
 			proxyFactory.addEventListener( ProxyFactoryBuildEvent.AFTER_PROXY_BUILD, implementInterface );
+			mapping = new Dictionary( true );
 		}
 	}
 }

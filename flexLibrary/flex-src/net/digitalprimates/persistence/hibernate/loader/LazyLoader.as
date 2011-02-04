@@ -31,16 +31,16 @@ package net.digitalprimates.persistence.hibernate.loader {
 	import mx.events.PropertyChangeEvent;
 	import mx.rpc.AsyncToken;
 	import mx.rpc.IResponder;
-	import mx.rpc.remoting.RemoteObject;
 	
 	import net.digitalprimates.persistence.hibernate.HibernateConstants;
 	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
 	import net.digitalprimates.persistence.hibernate.manager.HibernateEntityManager;
-	import net.digitalprimates.persistence.hibernate.rpc.HibernateEntityMapResponder;
+	import net.digitalprimates.persistence.hibernate.manager.HibernateManager;
 	
-	import org.as3commons.reflect.Accessor;
+	import org.as3commons.bytecode.abc.enum.NamespaceKind;
+	import org.as3commons.bytecode.reflect.ByteCodeType;
+	import org.as3commons.bytecode.reflect.IVisibleMember;
 	import org.as3commons.reflect.Field;
-	import org.as3commons.reflect.Type;
 	
 	public class LazyLoader implements IResponder {
 		private var manager:HibernateEntityManager;
@@ -53,7 +53,9 @@ package net.digitalprimates.persistence.hibernate.loader {
 		}
 		
 		public function result(data:Object):void {
-			var type:Type = Type.forInstance( entity );
+			//temporary
+			var proxiedClass:Class = HibernateManager.getProxiedClass( entity );
+			var type:ByteCodeType = ByteCodeType.forInstance( proxiedClass );
 			var field:Field;
 			var resultObj:* = data.result;
 			
@@ -66,16 +68,10 @@ package net.digitalprimates.persistence.hibernate.loader {
 			
 			for ( var i:int=0; i<properties.length; i++ ) {
 				field = properties[ i ] as Field;
-				
-				if ( ( field.name != 'methodInvocationInterceptor' ) && ( field.name != 'manager' ) ) {
-					if ( field is Accessor ) {
-						if ( ( field as Accessor ).writeable ) {
-							copyField( resultObj, entity, field.name );
-						} 
-					} else {
-						copyField( resultObj, entity, field.name );
-					}
-				}
+
+				if ( ( field is IVisibleMember ) && ( ( field as IVisibleMember ).visibility == NamespaceKind.PACKAGE_NAMESPACE ) ) {
+					copyField( resultObj, entity, field.name );
+				} 
 			}
 
 			if ( entity is IEventDispatcher ) {

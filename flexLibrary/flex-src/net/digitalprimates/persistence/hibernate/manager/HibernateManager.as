@@ -80,7 +80,15 @@ package net.digitalprimates.persistence.hibernate.manager {
 			
 			return entityProxyBuilder.getEntityClass( clazz );	
 		}	
-		
+
+		public static function getProxiedClass( instance:* ):Class {
+			if ( !entityProxyBuilder ) {
+				return null;
+			}
+			
+			return entityProxyBuilder.getProxiedClass( instance );	
+		}
+
 		public function HibernateManager() {
 		}
 	}
