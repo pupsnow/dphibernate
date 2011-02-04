@@ -1,17 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <flexLibProperties includeAllClasses="true" version="3">
   <includeClasses>
-    <classEntry path="net.digitalprimates.persistence.hibernate.loader.LazyLoader"/>
     <classEntry path="net.digitalprimates.persistence.hibernate.manager.HibernateManager"/>
-    <classEntry path="net.digitalprimates.persistence.entity.proxy.EntityProxyBuilder"/>
-    <classEntry path="net.digitalprimates.persistence.entity.IEntity"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.IHibernateRPC"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateRemoteObject"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.manager.HibernateEntityManager"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.EntityMapResponder"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.introduction.IManagedEntity"/>
-    <classEntry path="net.digitalprimates.persistence.hibernate.loader.LazyLoadEvent"/>
-    <classEntry path="net.digitalprimates.persistence.entity.manager.IEntityManager"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>
