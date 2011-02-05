@@ -41,8 +41,6 @@ package net.digitalprimates.persistence.hibernate.rpc {
 		private const propertyName:String = "testABC";
 		private const propertyValue:String = "ABC123";		
 		
-		var c:MockingCouverture;
-		
 		[Test]
 		public function shouldReturnResult():void {
 			var handler:HibernateResultHandlerImpl = new HibernateResultHandlerImpl( manager );
