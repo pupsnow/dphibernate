@@ -26,23 +26,27 @@
  * @version    
  **/
 package net.digitalprimates.persistence.hibernate.manager {
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.utils.Dictionary;
 	
 	import mx.rpc.AsyncToken;
+	import mx.rpc.Responder;
 	import mx.rpc.remoting.RemoteObject;
 	
 	import net.digitalprimates.persistence.entity.IEntity;
-	import net.digitalprimates.persistence.entity.manager.IEntityManager;
-	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
-	import net.digitalprimates.persistence.hibernate.rpc.HibernateEntityMapResponder;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
+	import net.digitalprimates.persistence.hibernate.rpc.HibernateResultHandlerImpl;
+	
+	import org.as3commons.bytecode.reflect.ByteCodeType;
 
-	public class HibernateEntityManager extends EventDispatcher implements IEntityManager {
+	[Event(name="result", type="mx.rpc.events.ResultEvent")]
+	[Event(name="fault", type="mx.rpc.events.FaultEvent")]
+	public class HibernateEntityManager extends EventDispatcher implements IHibernateEntityManager {
 		
 		private var _remoteObject:RemoteObject;
 		private var entities:Dictionary; 
 		private var _destination:String;
-		
 
 		/**
 		 * Returns the internal RemoteObject instance used for communication 
@@ -51,6 +55,17 @@ package net.digitalprimates.persistence.hibernate.manager {
 		 */		
 		public function get remoteObject():RemoteObject {
 			return _remoteObject;
+		}
+		
+		/**
+		 * Sets up the RemoteObject passed into this class 
+		 * @param value RemoteObject
+		 * 
+		 */		
+		private function setRemoteObject( value:RemoteObject ):void {
+			var handler:HibernateResultHandlerImpl = new HibernateResultHandlerImpl( this );
+			_remoteObject = value;
+			_remoteObject.convertResultHandler = handler.resultConversionFunction;
 		}
 		
 		/**
@@ -74,7 +89,7 @@ package net.digitalprimates.persistence.hibernate.manager {
 		 * 
 		 */		
 		public function contains( entity:IEntity ):Boolean {
-			var val:IHibernateManagedEntity = entities[ entity ]; 
+			var val:* = entities[ entity ]; 
 			return ( val != null );
 		}
 
@@ -91,7 +106,7 @@ package net.digitalprimates.persistence.hibernate.manager {
 			
 			//Hardcoded for the moment
 			var token:AsyncToken = _remoteObject.getLotsByAuctionId_bidder( primaryKey );
-			token.addResponder( new HibernateEntityMapResponder( this ) );
+			token.addResponder( new Responder( propogateEvent, propogateEvent )  );
 			
 			return token;
 		}
@@ -112,11 +127,25 @@ package net.digitalprimates.persistence.hibernate.manager {
 			return null;
 		}
 
-		public function manage( entity:IEntity ):void {
-			var managedEntity:IHibernateManagedEntity = verifyEntity( entity );
+		/**
+		 * Makes this managed entity known to the entity manager 
+		 * @param managedEntity
+		 * 
+		 */		
+		public function manage( managedEntity:IHibernateManagedEntity ):void {
 			entities[ managedEntity ] = true;
 			managedEntity.manager = this;
 		}
+		
+		/**
+		 * removes knowledge of this managed entity from this manager 
+		 * @param managedEntity
+		 * 
+		 */		
+		public function unmanage( managedEntity:IHibernateManagedEntity ):void {
+			delete entities[ managedEntity ];
+			managedEntity.manager = null;
+		}		
 
 		/**
 		 * Refresh the state of the instance from the database, overwriting changes made to the entity, if any.
@@ -139,10 +168,19 @@ package net.digitalprimates.persistence.hibernate.manager {
 		private function verifyEntity( entity:IEntity ):IHibernateManagedEntity {
 			if ( !(  entity is IHibernateManagedEntity ) ) {
 				//make me better
-				throw new Error("Hibernate Entity Manager works with IHibernateManagedEntity");
+				throw new TypeError("Hibernate Entity Manager works with IHibernateManagedEntity");
 			}			
 			
 			return entity as IHibernateManagedEntity;
+		}
+		
+		/**
+		 * Ensures events dispatched by the RemoteObject are propogated out of the EntityManager 
+		 * @param event
+		 * 
+		 */		
+		private function propogateEvent( event:Event ):void {
+			dispatchEvent( event.clone() );
 		}
 		
 		/**
@@ -157,13 +195,31 @@ package net.digitalprimates.persistence.hibernate.manager {
 			return null;
 		}
 		
+		/**
+		 * Loads the uninitialized proxy 
+		 * @param entity
+		 * @return 
+		 * 
+		 */		
 		public function incremenetalLoad( entity:IHibernateManagedEntity ):AsyncToken {
 			return _remoteObject.loadDPProxy( entity.proxyKey, entity );
 		}
 		
-		public function HibernateEntityManager( remoteObject:RemoteObject ) {
-			this._remoteObject = remoteObject;
+		
+		public function getTypeInfoForProxiedClass( entity:IHibernateManagedEntity ):ByteCodeType {
+			var proxiedClass:Class = HibernateManager.getProxiedClass( entity );
+			var type:ByteCodeType = ByteCodeType.forInstance( proxiedClass );
 			
+			return type;
+		}
+		/**
+		 * 
+		 * @param remoteObject
+		 * @param conversionHandler
+		 * 
+		 */		
+		public function HibernateEntityManager( remoteObject:RemoteObject ) {
+			setRemoteObject( remoteObject );
 			entities = new Dictionary( true );
 		}
 	}

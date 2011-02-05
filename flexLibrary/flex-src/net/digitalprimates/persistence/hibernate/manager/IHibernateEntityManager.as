@@ -25,14 +25,47 @@
  * @author     Michael Labriola 
  * @version    
  **/
-package net.digitalprimates.persistence.hibernate {
-	public class HibernateConstants {
-		public static const HIBERNATE_METADATA:String = "hibernate";
+package net.digitalprimates.persistence.hibernate.manager {
+	import flash.events.IEventDispatcher;
+	
+	import mx.rpc.AsyncToken;
+	
+	import net.digitalprimates.persistence.entity.manager.IEntityManager;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
+	
+	import org.as3commons.bytecode.reflect.ByteCodeType;
 
-		public static const REMOTE_CLASS:String = "RemoteClass";
-		public static const ALIAS:String = "alias";
+	public interface IHibernateEntityManager extends IEntityManager, IEventDispatcher {
+
+		/**
+		 * Makes this managed entity known to the entity manager 
+		 * @param managedEntity
+		 * 
+		 */			
+		function manage( managedEntity:IHibernateManagedEntity ):void;
 		
-		public static const PENDING:uint = 0x0001;
-		public static const SERIALIZING:uint = 0x0002;				
+		/**
+		 * removes knowledge of this managed entity from this manager 
+		 * @param managedEntity
+		 * 
+		 */		
+		function unmanage( managedEntity:IHibernateManagedEntity ):void;
+		
+		/**
+		 * Loads the uninitialized proxy 
+		 * @param entity
+		 * @return 
+		 * 
+		 */		
+		function incremenetalLoad( entity:IHibernateManagedEntity ):AsyncToken;
+		
+		/**
+		 * Returns ByteCodeTypeInformation for the original class an entity proxies 
+		 * @param entity
+		 * @return ByteCodeType
+		 * 
+		 */		
+		function getTypeInfoForProxiedClass( entity:IHibernateManagedEntity ):ByteCodeType;
+		
 	}
 }

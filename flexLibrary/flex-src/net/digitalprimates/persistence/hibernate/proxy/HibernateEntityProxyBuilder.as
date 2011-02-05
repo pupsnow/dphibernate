@@ -35,9 +35,11 @@ package net.digitalprimates.persistence.hibernate.proxy {
 	
 	import net.digitalprimates.persistence.entity.IEntityObjectManager;
 	import net.digitalprimates.persistence.entity.interceptor.EntityInterceptorFactory;
-	import net.digitalprimates.persistence.hibernate.HibernateConstants;
+	import net.digitalprimates.persistence.hibernate.constants.HibernateConstants;
 	import net.digitalprimates.persistence.hibernate.interceptor.HibernateEntityInterceptor;
 	import net.digitalprimates.persistence.hibernate.introduction.HibernateIntroduction;
+	import net.digitalprimates.persistence.hibernate.loader.ILazyLoaderFactory;
+	import net.digitalprimates.persistence.hibernate.loader.LazyLoaderFactory;
 	import net.digitalprimates.persistence.hibernate.manager.HibernateObjectManagerImpl;
 	
 	import org.as3commons.bytecode.emit.IAbcBuilder;
@@ -67,12 +69,15 @@ package net.digitalprimates.persistence.hibernate.proxy {
 			return ByteCodeType.getClassesWithMetadata(HibernateConstants.HIBERNATE_METADATA);
 		}
 
-		private function defineEntity(entityName:String, factory:IProxyFactory, objectManager:IEntityObjectManager):void {
+		private function defineEntity(entityName:String, proxyFactory:IProxyFactory ):void {
 			var type:ByteCodeType;
-			var classProxyInfo:IClassProxyInfo;
+			var classProxyInfo:IClassProxyInfo;			
+			var objectManager:IEntityObjectManager;
 
 			type = ByteCodeType.forName( entityName );
-			classProxyInfo = factory.defineProxy( type.clazz );
+			objectManager = new HibernateObjectManagerImpl( new LazyLoaderFactory( type ) );
+
+			classProxyInfo = proxyFactory.defineProxy( type.clazz );
 			classProxyInfo.proxyAccessorScopes = ProxyScope.PUBLIC;
 			classProxyInfo.proxyMethodScopes = ProxyScope.NONE;
 			classProxyInfo.introduce(HibernateIntroduction);
@@ -121,7 +126,7 @@ package net.digitalprimates.persistence.hibernate.proxy {
 		private function implementInterface(event:ProxyFactoryBuildEvent):void {
 			//just here for now for linking
 			var builder:IClassBuilder = event.classBuilder;
-			builder.implementInterfaces( ["net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity"] );
+			builder.implementInterfaces( ["net.digitalprimates.persistence.hibernate.IHibernateManagedEntity"] );
 		}
 
 		public function createEntity(clazz:Class, args:Array = null):* {
@@ -147,15 +152,13 @@ package net.digitalprimates.persistence.hibernate.proxy {
 
 		public function manageEntities():void {
 			var definitionNames:Array;
-			var hibernateImpl:IEntityObjectManager;
 
 			initStructures();
 
 			definitionNames = findEntityNames();
-			hibernateImpl = new HibernateObjectManagerImpl();
 
 			for (var i:int = 0; i < definitionNames.length; i++) {
-				defineEntity(definitionNames[i], proxyFactory, hibernateImpl);
+				defineEntity(definitionNames[i], proxyFactory );
 			}
 
 			var abcBuilder:IAbcBuilder = proxyFactory.generateProxyClasses();

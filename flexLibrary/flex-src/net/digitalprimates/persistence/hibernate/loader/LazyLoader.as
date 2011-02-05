@@ -26,44 +26,51 @@
  * @version    
  **/
 package net.digitalprimates.persistence.hibernate.loader {
+	import flash.events.Event;
 	import flash.events.IEventDispatcher;
 	
 	import mx.events.PropertyChangeEvent;
 	import mx.rpc.AsyncToken;
 	import mx.rpc.IResponder;
 	
-	import net.digitalprimates.persistence.hibernate.HibernateConstants;
-	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
-	import net.digitalprimates.persistence.hibernate.manager.HibernateEntityManager;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
+	import net.digitalprimates.persistence.hibernate.constants.HibernateConstants;
 	import net.digitalprimates.persistence.hibernate.manager.HibernateManager;
+	import net.digitalprimates.persistence.hibernate.manager.IHibernateEntityManager;
 	
 	import org.as3commons.bytecode.abc.enum.NamespaceKind;
 	import org.as3commons.bytecode.reflect.ByteCodeType;
 	import org.as3commons.bytecode.reflect.IVisibleMember;
 	import org.as3commons.reflect.Field;
 	
-	public class LazyLoader implements IResponder {
-		private var manager:HibernateEntityManager;
+	public class LazyLoader implements ILazyLoader, IResponder {
+		private var manager:IHibernateEntityManager;
 		private var entity:IHibernateManagedEntity;
 		private var property:String;
+		private var type:ByteCodeType;
 		
 		public function load():void {
+			//Set this to pending
+			entity.comStatus |= HibernateConstants.PENDING;
+			
 			var token:AsyncToken = manager.incremenetalLoad( entity );
 			token.addResponder( this );
 		}
 		
 		public function result(data:Object):void {
-			//temporary
-			var proxiedClass:Class = HibernateManager.getProxiedClass( entity );
-			var type:ByteCodeType = ByteCodeType.forInstance( proxiedClass );
 			var field:Field;
-			var resultObj:* = data.result;
+			var resultObj:IHibernateManagedEntity = data.result as IHibernateManagedEntity;
 			
 			//We are no longer pending
 			entity.comStatus &= (~HibernateConstants.PENDING);
 			
-			//Can be made much more efficient, we should actually use the proxied class so we don't check our own introductins
-			//and need to avoid things like prototype
+			/* The top level entity we just received was added to the EntityManager by the HibernateResultHandlerImpl
+				however, since we got to this code, we can now understand that we are actually lazyloading...
+			
+				This means the top level entity is not important to us.. in fact, we are going to toss it and just steal
+				its properties.. therefore, we need to unmanage it */
+			manager.unmanage( resultObj );
+			
 			var properties:Array = type.properties;
 			
 			for ( var i:int=0; i<properties.length; i++ ) {
@@ -73,9 +80,11 @@ package net.digitalprimates.persistence.hibernate.loader {
 					copyField( resultObj, entity, field.name );
 				} 
 			}
+			
+			copyHibernateFields( resultObj, entity );
 
 			if ( entity is IEventDispatcher ) {
-				( entity as IEventDispatcher ).dispatchEvent( PropertyChangeEvent.createUpdateEvent( entity, null, null, null ) );
+				( entity as IEventDispatcher ).dispatchEvent( PropertyChangeEvent.createUpdateEvent( entity, property, null, entity[ property ] ) );
 			} 
 		}
 		
@@ -87,35 +96,33 @@ package net.digitalprimates.persistence.hibernate.loader {
 		 * 
 		 */		
 		private function copyField( source:*, destination:*, propertyName:String ):void {
+			trace( source[ propertyName ] );
 			destination[ propertyName ] = source[ propertyName ];
-
-			if ( destination[ propertyName ] is IHibernateManagedEntity ) {
-				setupEntity( destination[ propertyName ] as IHibernateManagedEntity, destination );
-			}					
-			
 		}
-		
-		private function setupEntity( entity:IHibernateManagedEntity, parent:IHibernateManagedEntity ):void {
-			//Duplicated code.... need to refactor EntityMapResponder and this
-			manager.manage( entity );
-			
-			if ( ( entity is IEventDispatcher ) && ( parent is IEventDispatcher ) ) {
-				( entity as IEventDispatcher).addEventListener( PropertyChangeEvent.PROPERTY_CHANGE, ( parent as IEventDispatcher ).dispatchEvent);
-			}
+
+		private function copyHibernateFields( source:IHibernateManagedEntity, destination:IHibernateManagedEntity ):void {
+			destination.comStatus = source.comStatus;
+			destination.proxyKey = source.proxyKey;
+			destination.proxyInitialized = source.proxyInitialized;
 		}
 		
 		public function fault(info:Object):void {
+			
+			var status:uint = entity.comStatus;
+			status &= (~HibernateConstants.PENDING);
+			
 			//We are no longer pending
-			entity.comStatus &= (~HibernateConstants.PENDING);
+			entity.comStatus = status;
 
 			//probably need to throw an error or something
-			manager.dispatchEvent( info.clone() );
+			manager.dispatchEvent( info as Event );
 		}
 
-		public function LazyLoader( manager:HibernateEntityManager, entity:IHibernateManagedEntity, property:String ) {
+		public function LazyLoader( manager:IHibernateEntityManager, entity:IHibernateManagedEntity, property:String, type:ByteCodeType ) {
 			this.manager = manager;
 			this.entity = entity;
 			this.property = property;
+			this.type = type;
 		}
 	}
 }

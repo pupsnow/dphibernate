@@ -29,7 +29,7 @@ package net.digitalprimates.persistence.entity.manager {
 	import mx.rpc.AsyncToken;
 	
 	import net.digitalprimates.persistence.entity.IEntity;
-	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
 
 	public interface IEntityManager {
 		

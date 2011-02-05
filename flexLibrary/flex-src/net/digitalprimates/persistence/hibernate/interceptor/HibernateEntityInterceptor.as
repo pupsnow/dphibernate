@@ -28,8 +28,8 @@
 package net.digitalprimates.persistence.hibernate.interceptor {
 	
 	import net.digitalprimates.persistence.entity.IEntityObjectManager;
-	import net.digitalprimates.persistence.hibernate.HibernateConstants;
-	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
+	import net.digitalprimates.persistence.hibernate.constants.HibernateConstants;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
 	
 	import org.as3commons.bytecode.interception.IMethodInvocationInterceptor;
 	import org.as3commons.bytecode.interception.impl.InvocationKind;

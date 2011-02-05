@@ -26,7 +26,7 @@
  * @version    
  **/
 package net.digitalprimates.persistence.entity {
-	import net.digitalprimates.persistence.hibernate.introduction.IHibernateManagedEntity;
+	import net.digitalprimates.persistence.hibernate.IHibernateManagedEntity;
 
 	public interface IEntityObjectManager {
 		function getProperty(obj:IEntity, property:String ):*;

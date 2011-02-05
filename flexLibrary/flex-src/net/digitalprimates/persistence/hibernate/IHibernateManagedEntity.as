@@ -25,13 +25,13 @@
  * @author     Michael Labriola 
  * @version    
  **/
-package net.digitalprimates.persistence.hibernate.introduction {
+package net.digitalprimates.persistence.hibernate {
 	import net.digitalprimates.persistence.entity.IEntity;
-	import net.digitalprimates.persistence.entity.manager.IEntityManager;
+	import net.digitalprimates.persistence.hibernate.manager.IHibernateEntityManager;
 
 	public interface IHibernateManagedEntity extends IEntity {
-		function get manager():IEntityManager;
-		function set manager( value:IEntityManager ):void;
+		function get manager():IHibernateEntityManager;
+		function set manager( value:IHibernateEntityManager ):void;
 		function get proxyKey():Object;
 		function set proxyKey( value:Object ):void;
 		function get proxyInitialized():Boolean;

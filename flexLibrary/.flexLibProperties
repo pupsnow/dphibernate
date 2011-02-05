@@ -2,6 +2,12 @@
 <flexLibProperties includeAllClasses="true" version="3">
   <includeClasses>
     <classEntry path="net.digitalprimates.persistence.hibernate.manager.HibernateManager"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.IHibernateResultHandler"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.rpc.HibernateResultHandlerImpl"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.manager.IHibernateEntityManager"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.loader.LazyLoaderFactory"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.loader.ILazyLoader"/>
+    <classEntry path="net.digitalprimates.persistence.hibernate.loader.ILazyLoaderFactory"/>
   </includeClasses>
   <includeResources/>
   <namespaceManifests/>
