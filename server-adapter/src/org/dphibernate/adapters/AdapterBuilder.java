@@ -29,7 +29,7 @@ public class AdapterBuilder
 	private String saveMethodName;
 	private String loadBatchMethodName;
 	private SerializerConfiguration defaultConfiguration;
-	private int pageSize;
+	private int pageSize = -1;
 	
 	public AdapterBuilder(IAdapter adapter)
 	{
