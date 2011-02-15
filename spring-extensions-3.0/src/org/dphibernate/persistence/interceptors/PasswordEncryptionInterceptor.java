@@ -86,6 +86,7 @@ public class PasswordEncryptionInterceptor implements IPasswordEncryptionInterce
 			throw new RuntimeException(e);
 		}
 		sessionFactory.getCurrentSession().update(entity);
+		sessionFactory.getCurrentSession().flush();
 	}
 
 
