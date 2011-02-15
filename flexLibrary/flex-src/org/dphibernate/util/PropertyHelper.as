@@ -1,4 +1,4 @@
-package com.inversion.model
+package org.dphibernate.util
 {
 	import mx.binding.utils.ChangeWatcher;
 
@@ -9,7 +9,7 @@ package com.inversion.model
 		private var _host : Object;
 		private var _propertiesToWatch : Array;
 		
-		private var changeWatchers : Vector.<ChangeWatcher> = new Vector.<ChangeWatcher>();
+		private var changeWatchers : Array = []; // of ChangeWatcher
 		public function invokeWhenAllPopulated( func : Function , funcParams : Array , host : Object , propertiesToWatch : Array ) : void
 		{
 			_func = func;

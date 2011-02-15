@@ -4,12 +4,9 @@ package org.dphibernate.persistence.state
 	import flash.utils.Dictionary;
 	import flash.utils.getQualifiedClassName;
 	
-	import flashx.textLayout.edit.IEditManager;
-	
 	import mx.collections.ArrayCollection;
 	import mx.collections.IList;
 	import mx.data.IManaged;
-	import mx.data.utils.Managed;
 	import mx.events.CollectionEvent;
 	import mx.events.CollectionEventKind;
 	import mx.events.PropertyChangeEvent;

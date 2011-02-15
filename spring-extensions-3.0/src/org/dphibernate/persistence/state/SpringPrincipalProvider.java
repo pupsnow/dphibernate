@@ -10,12 +10,18 @@ public class SpringPrincipalProvider implements IPrincipalProvider {
 	@Override
 	public Principal getPrincipal() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-		return (Principal) authentication.getPrincipal();
+		if (authentication.getPrincipal() != null && authentication.getPrincipal() instanceof Principal)
+		{
+			return (Principal) authentication.getPrincipal();
+		}
+		return null;
+		
 	}
 
 	@Override
 	public boolean isAnonymous() {
-		return getPrincipal().equals("roleAnonymous");
+		return getPrincipal() == null;
+//		return getPrincipal().equals("roleAnonymous");
 	}
 
 }
