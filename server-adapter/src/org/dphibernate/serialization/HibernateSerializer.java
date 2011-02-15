@@ -567,7 +567,6 @@ public class HibernateSerializer extends AbstractSerializer
 
 	private CollectionProxyResolver getCollectionProxyResolver(AbstractCollectionPersister collectionPersister, EntityPersister entityPersister)
 	{
-		CollectionProxyResolver collectionProxyResolver;
 		if (entityPersister instanceof SingleTableEntityPersister)
 		{
 			if (((SingleTableEntityPersister) entityPersister).getDiscriminatorColumnName() != null)
@@ -576,69 +575,6 @@ public class HibernateSerializer extends AbstractSerializer
 			}
 		}
 		return new SingleTypeCollectionProxyResolver(getDialect(), collectionPersister);
-	}
-
-
-	/**
-	 * Query the database and get a result set of IDS that belong to a specific
-	 * collection
-	 * 
-	 * @return
-	 */
-	private List getPkIds(Session session, AbstractCollectionPersister persister, PersistentCollection collection) throws ClassNotFoundException
-	{
-		List results = new ArrayList();
-		String[] keyNames;
-		if (persister.isOneToMany() || persister.isManyToMany())
-		{
-			keyNames = persister.getElementColumnNames();
-		} else
-		{
-			keyNames = persister.getKeyColumnNames();
-		}
-		Dialect dialect = getDialect();
-		SimpleSelect pkSelect = new SimpleSelect(dialect);
-		pkSelect.setTableName(persister.getTableName());
-		pkSelect.addColumns(keyNames);
-		pkSelect.addCondition(persister.getKeyColumnNames(), "=?");
-
-		String sql = pkSelect.toStatementString();
-
-		try
-		{
-			// int size = absPersister.getSize(collection.getKey(),
-			// eventSession);
-			ResultTransformer transformer = ResultTransformerUtil.PASS_THROUGH_RESULT_TRANSFORMER;
-			Query q2 = session.createSQLQuery(sql).setParameter(0, collection.getKey()).setResultTransformer(transformer);
-
-			// List hibernateResults = q2.list();
-			// return results;
-
-			Type t = persister.getKeyType();
-
-			PreparedStatement stmt = session.connection().prepareStatement(sql);
-			if (t instanceof StringType)
-			{
-				stmt.setString(1, collection.getKey().toString());
-			} else
-			{
-				stmt.setObject(1, new Integer(collection.getKey().toString()).intValue());
-			}
-
-			ResultSet keyResults = stmt.executeQuery();
-
-			while (keyResults.next())
-			{
-				results.add(keyResults.getObject(1));
-			}
-			stmt.close();
-
-		} catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
-
-		return results;
 	}
 
 
