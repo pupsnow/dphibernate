@@ -22,6 +22,7 @@ package org.dphibernate.rpc
 	import com.hexagonstar.util.debug.StopWatch;
 	
 	import flash.events.IEventDispatcher;
+	import flash.sampler.DeleteObjectSample;
 	import flash.utils.*;
 	
 	import mx.collections.ArrayCollection;
@@ -56,7 +57,7 @@ package org.dphibernate.rpc
 
 		protected static var recursionWatch:Dictionary=new Dictionary(true);
 
-		protected static var pendingDictionary:Dictionary=new Dictionary(true);
+		protected static var objectsCurrentLoading:Object = new Object(); // Hash - stored by unique key generated for proxy
 
 		private static var log:ILogger=LogUtil.getLogger(HibernateManaged);
 
@@ -224,7 +225,8 @@ package org.dphibernate.rpc
 			   token.parent=hibernateDictionary[obj].parent;
 			   token.parentProperty=hibernateDictionary[obj].parentProperty;
 			 */
-			trace("Asking for Lazy Data for Property " + token.parentProperty);
+			var key:String = StateRepository.getKey(obj);
+			trace("Asking for Lazy Data for Property " + property + " on " + key);
 
 
 			if (obj is IEventDispatcher)
@@ -242,19 +244,41 @@ package org.dphibernate.rpc
 
 		public static function getProperty(obj:IHibernateProxy, property:String, value:*):*
 		{
+			// TODO : MP - trying this, but not sure if it's right.  We have the value, so lets just return it,
+			// doesn't matter if the proxy is initialized or not.
+			if (value)
+				return value;
 			if (obj.proxyInitialized)
 				return value;
 
 			var ro:IHibernateRPC=hibernateRPCProvider.getRemoteObject(obj);
-			if (!pendingDictionary[obj] && ro.enabled)
+			if (!isCurrentlyLoading(obj) && ro.enabled)
 			{
-				pendingDictionary[obj]=true;
+				setObjectLoading(obj);
 				return getLazyDataFromServer(obj, property, value);
 			}
 			else
 			{
 				return value;
 			}
+		}
+
+		private static function setObjectLoading(obj:IHibernateProxy):void
+		{
+			var key:String = StateRepository.getKey(obj);
+			objectsCurrentLoading[key] = true;
+		}
+
+		private static function isCurrentlyLoading(obj:IHibernateProxy):Boolean
+		{
+			// TODO : getKey should be moved off StateRepository
+			var key:String = StateRepository.getKey(obj);
+			return objectsCurrentLoading[key] != null;
+		}
+		private static function setObjectLoadComplete(proxy:IHibernateProxy):void
+		{
+			var key:String = StateRepository.getKey(proxy);
+			delete objectsCurrentLoading[key];
 		}
 
 		public static function rebroadcastEvent(event:PropertyChangeEvent):void
@@ -289,7 +313,7 @@ package org.dphibernate.rpc
 			var methodSw:StopWatch=StopWatch.startNew("lazyLoadArrived");
 			var token:AsyncToken=event.token;
 
-			delete pendingDictionary[token.obj];
+			setObjectLoadComplete(token.obj);
 
 			var classDef:Class=getDefinitionByName(getQualifiedClassName(token.obj)) as Class;
 			var ro:IHibernateRPC=token.ro;

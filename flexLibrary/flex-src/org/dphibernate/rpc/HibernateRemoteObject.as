@@ -31,8 +31,8 @@ package org.dphibernate.rpc
     import mx.rpc.events.ResultEvent;
     import mx.rpc.remoting.mxml.RemoteObject;
     
-    import org.dphibernate.util.ClassUtils;
     import org.dphibernate.core.IHibernateProxy;
+    import org.dphibernate.util.ClassUtils;
     import org.dphibernate.util.LogUtil;
 
     use namespace flash_proxy;
@@ -77,26 +77,43 @@ package org.dphibernate.rpc
 		override public function getOperation(name:String):AbstractOperation
 		{
 			var operation:AbstractOperation = super.getOperation(name);
-			bufferOperation(operation);
+			assignOperationManager(operation);
 			if (operationPostConstructDecorator != null)
 			{
 				operationPostConstructDecorator(operation);
 			}
+			
 			return operation;
 		}
 
-		private function bufferOperation(operation:AbstractOperation):void
+		private function assignOperationManager(operation:AbstractOperation):void
 		{
 			if (!operationBufferFactory || !bufferProxyLoadRequests)
-				return;
-
+			{
+				assignPerCallOperationManager(operation);
+			} else {
+				assignBufferedOperationManager(operation);
+			}
+		}
+		/**
+		 * Assigns an operation manager to handle calls that are not buffered
+		 * */
+		private function assignPerCallOperationManager(operation:AbstractOperation):void
+		{
+			LazyLoadingOperationManager.intialize(operation,this);
+		}
+		/**
+		 * Assigns an operation manager to buffer calls
+		 * */
+		private function assignBufferedOperationManager(operation:AbstractOperation):void
+		{
 			var buffer:IOperationBuffer = operationBufferFactory.getBuffer(this,operation);
 			if (buffer)
 			{
 				operation.operationManager = buffer.bufferedSend;
 			}
 		}
-
+		
 
         public function loadProxy(proxyKey:Object, hibernateProxy:IHibernateProxy):AsyncToken
         {
@@ -141,18 +158,6 @@ package org.dphibernate.rpc
 			log.info( "Saving {0} {1}" , className , hibernateProxy.proxyKey );
 			return this.saveDPProxy( objectChangeMessages );
 		}
-        override flash_proxy function callProperty(name:*, ... args:Array):*
-        {
-            var token:AsyncToken;
-
-            enabled = false;
-            token = getOperation(getLocalName(name)).send.apply(null, args);
-
-            HibernateManaged.addHibernateResponder(this, token);
-            enabled = true;
-
-            return token;
-        }
 		
 		private var _stateTrackingEnabled : Boolean = false;
 		public function get stateTrackingEnabled() : Boolean
@@ -191,4 +196,67 @@ package org.dphibernate.rpc
 			setProxyLoaded(key);
 		}
     }
+}
+import mx.rpc.AbstractOperation;
+import mx.rpc.AsyncToken;
+
+import org.dphibernate.rpc.HibernateManaged;
+import org.dphibernate.rpc.HibernateRemoteObject;
+/**
+ * A simple OperationManager.
+ * Outbound calls issued through this operation are 
+ * intercepted as the AsyncToken is created
+ * and wired up to a HibernateResponder,
+ * which is responsible for setting up lazy loading
+ * on the response received from the server */
+class LazyLoadingOperationManager
+{
+	private var operation:AbstractOperation;
+	private var remoteObject:HibernateRemoteObject;
+	public function LazyLoadingOperationManager(operation:AbstractOperation,remoteObject:HibernateRemoteObject)
+	{
+		this.operation = operation;
+		this.remoteObject = remoteObject;
+		operation.operationManager = managedSend;
+	}
+	/**
+	 * Wraps outbound calls initiated on the operation, to apply
+	 * a hibernateResponder to the AsyncToken.
+	 * 
+	 * This responder is responsible for setting up lazy loading 
+	 * on the recieved object.
+	 * */
+	private function managedSend(...args):AsyncToken
+	{
+		
+		remoteObject.enabled = false;
+		// Disable the operation manager temporarily to 
+		// get the real async token
+		operation.operationManager = null;
+		
+		var token:AsyncToken = invokeOperationSend(args);
+		HibernateManaged.addHibernateResponder(remoteObject, token);
+		// Set the operationManager back to us for future calls
+		operation.operationManager = managedSend;
+		remoteObject.enabled = true;
+		return token;
+	}
+	private function invokeOperationSend(args:Array):AsyncToken
+	{
+		var methodArgs:Array = args[0];
+		if (methodArgs.length == 0)
+		{
+			return operation.send();
+		} else {
+			return operation.send.apply(null,methodArgs);
+		}
+	}
+	/**
+	 * Convenience constructor to make the syntax more readable
+	 * */
+	public static function intialize(operation:AbstractOperation,remoteObject:HibernateRemoteObject):LazyLoadingOperationManager
+	{
+		var manager:LazyLoadingOperationManager = new LazyLoadingOperationManager(operation,remoteObject);
+		return manager;
+	}
 }
