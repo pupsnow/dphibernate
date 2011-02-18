@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flex="http://www.springframework.org/schema/flex"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+	http://www.springframework.org/schema/flex 	http://www.springframework.org/schema/flex/spring-flex-1.0.xsd">
+
+	<flex:message-broker services-config-path="/WEB-INF/flex/services-config.xml">
+		<flex:remoting-service default-adapter-id="dpHibernateRemotingAdapter"
+			default-channels="my-amf,my-secure-amf" />
+	</flex:message-broker>
+
+	<!-- DpHibernate configuration follows: -->
+	<!--
+		Defines the remoting adapter, which intercepts inbound & outbound
+		messages, and routes them thruogh dpHibernate
+	-->
+	<bean id="dpHibernateRemotingAdapter"
+		class="org.springframework.flex.core.ManageableComponentFactoryBean">
+		<constructor-arg value="org.dphibernate.adapters.RemotingAdapter" />
+		<property name="properties">
+			<value>
+				{"dpHibernate" :
+				{
+				"serializerFactory" : "org.dphibernate.serialization.SpringContextSerializerFactory"
+				}
+				}
+        </value>
+		</property>
+	</bean>
+	<!--
+		Provides a basic service for lazy loading operations through
+		dpHibernate. It's also exported as a remoting destination, which makes
+		it accessible to flex clients
+	-->
+	<bean id="dataAccessService" class="org.dphibernate.services.SpringLazyLoadService"
+		autowire="constructor">
+		<flex:remoting-destination />
+	</bean>
+	<!--
+		The main serializer. Converts outbound POJO's to ASObjects with
+		dpHibernate proxies for lazy loading. Required
+	-->
+	<bean id="dpHibernateSerializer" class="org.dphibernate.serialization.HibernateSerializer"
+		scope="prototype">
+		<property name="pageSize" value="10" />
+	</bean>
+	<bean id="dpHibernateDeserializer" class="org.dphibernate.serialization.HibernateDeserializer"
+		scope="prototype" />
+
+
+</beans>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300"
+		 title="Recent Questions" xmlns:spicefactory="http://www.spicefactory.org/parsley">
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			[Bindable]
+			public var questionList:ArrayCollection
+		]]>
+	</fx:Script>
+	<s:List width="100%" dataProvider="{questionList}" height="100%" contentBackgroundAlpha="0"
+			itemRenderer="com.mangofactory.pepper.view.QuestionRenderer"
+			borderAlpha="0"/>
+</s:Panel>

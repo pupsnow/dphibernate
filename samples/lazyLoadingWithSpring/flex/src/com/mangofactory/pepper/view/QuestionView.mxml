@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:view="com.mangofactory.pepper.view.*"
+		 xmlns:spicefactory="http://www.spicefactory.org/parsley"
+		 title="{post.title}">
+	<fx:Declarations>
+		<spicefactory:Configure/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import assets.skins.LinkButtonSkin;
+			
+			import com.mangofactory.pepper.controller.events.DeleteCommentEvent;
+			import com.mangofactory.pepper.model.Comment;
+			import com.mangofactory.pepper.model.Post;
+			
+			import flashx.textLayout.conversion.TextConverter;
+			
+			import mx.collections.ArrayCollection;
+			import mx.collections.IList;
+			import mx.core.IVisualElement;
+			[Bindable]
+			public var post:Post;
+
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Line width="100%"
+			height="1">
+		<s:stroke>
+			<s:LinearGradientStroke>
+				<s:GradientEntry color="white"
+								 alpha="0"/>
+				<s:GradientEntry color="white"
+								 alpha="100"/>
+				<s:GradientEntry color="white"
+								 alpha="0"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Line>
+	<s:Scroller top="10"
+				bottom="10"
+				left="0"
+				right="0">
+		<s:VGroup>
+			<s:RichEditableText textFlow="{TextConverter.importToFlow(post.body,TextConverter.TEXT_FIELD_HTML_FORMAT)}"
+								width="100%"
+								color="#FFFFFF"/>
+			<s:HGroup width="100%" paddingRight="10">
+				<s:DataGroup dataProvider="{post.postTags as IList}"
+							 itemRenderer="com.mangofactory.pepper.view.TagRenderer"
+							 width="100%">
+					<s:layout>
+						<s:TileLayout/>
+					</s:layout>
+				</s:DataGroup>
+				<s:VGroup>
+					<view:SmallUserView user="{post.author}"
+										visible="{post.author != null}"
+										label="Asked by:"/>
+					<view:SmallUserView user="{post.lastEditor}"
+										visible="{post.lastEditor != null}"
+										label="Edited by:"/>
+				</s:VGroup>
+			</s:HGroup>
+			<view:CommentsList width="100%" post="{post}" />
+			
+		</s:VGroup>
+	</s:Scroller>
+</s:Panel>

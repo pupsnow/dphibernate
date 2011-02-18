@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 minWidth="50"
+		 height.backgroundVisible="50"
+		 height.backgroundInvisible="{NaN}">
+	<s:states>
+		<s:State name="backgroundVisible" />
+		<s:State name="backgroundInvisible" />
+	</s:states>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			[Bindable]
+			public var value:Number;
+
+			[Bindable]
+			public var label:String;
+			
+			[Bindable]
+			public var color:uint;
+			
+			private var _backgroundVisible:Boolean;
+			public function get backgroundVisible():Boolean
+			{
+				return _backgroundVisible;
+			}
+			public function set backgroundVisible(value:Boolean):void
+			{
+				_backgroundVisible = value;
+				this.currentState = (backgroundVisible) ? 'backgroundVisible' : 'backgroundInvisible';
+			}
+		]]>
+	</fx:Script>
+	<s:Rect top="0" bottom="0" left="0" right="0" includeIn="backgroundVisible">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="#4378F1" />
+				<s:GradientEntry color="#0A47AE" />
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:BevelFilter angle="45" strength=".75" distance=".75" highlightAlpha="0.75"  blurX="2" blurY="2"/>
+		</s:filters>
+	</s:Rect>
+	<s:VGroup horizontalCenter="0" verticalCenter="0" horizontalAlign="center" gap="0" left.backgroundVisible="10" right.backgroundVisible="10"
+			  left.backgroundInvisible="0" right.backgroundInvisible="0">
+		<s:Label fontSize="24" fontFamily="segoeUI"
+				 text="{value}" color="white"/>
+		<s:Label fontSize="10" alpha="0.65" color="white"
+				 text="{label}"/>
+	</s:VGroup>
+</s:Group>

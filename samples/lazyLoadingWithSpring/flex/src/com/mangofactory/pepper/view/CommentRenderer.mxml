@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				width="100%" xmlns:spicefactory="http://www.spicefactory.org/parsley" xmlns:view="com.mangofactory.pepper.view.*" xmlns:ac="adobe.ac.*" xmlns:mangofactory="com.mangofactory.*" >
+	<s:layout>
+		<s:VerticalLayout gap="0"/>
+	</s:layout>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="hovered"/>
+		<s:State name="selected"/>
+	</s:states>
+	<fx:Declarations>
+		<spicefactory:Configure />
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import assets.skins.LinkButtonSkin;
+			
+			import com.mangofactory.pepper.controller.events.CommentUpdatedEvent;
+			import com.mangofactory.pepper.controller.events.DeleteCommentEvent;
+			import com.mangofactory.pepper.model.Comment;
+			[Bindable("dataChange")]
+			public function get comment():Comment
+			{
+				return data as Comment;
+			}
+			[MessageDispatcher]
+			public var broadcast:Function;
+			
+			public function beginEdit():void{
+				textArea.beginEdit();	
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup verticalAlign="middle" width="100%">
+		<view:EditableTextArea editable="{comment.editable}" width="100%" id="textArea" valueCommit="broadcast(new CommentUpdatedEvent(comment));" text="@{comment.text}" />
+		<mangofactory:StyleImage styleName="trash" visible="true" visible.normal="false" click="dispatchEvent(new DeleteCommentEvent(comment))"
+					   buttonMode="true" useHandCursor="true"/>
+	</s:HGroup>
+	<s:Button skinClass="assets.skins.LinkButtonSkin" label="{comment.user.displayName}" click="broadcast(new ShowUserEvent(comment.user))"
+			  includeInLayout="{comment.user != null}"/>
+</s:ItemRenderer>

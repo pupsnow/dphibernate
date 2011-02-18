@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009"
+			 xmlns:s="library://ns.adobe.com/flex/spark"
+			 xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+			 minWidth="21"
+			 minHeight="21"
+			 alpha.disabled="0.5"
+			 alpha="0.4"
+			 alpha.over="0.8"
+			 alpha.down="0.8"
+			 xmlns:ac="adobe.ac.*" xmlns:mangofactory="com.mangofactory.*">
+	<!-- host component -->
+	<fx:Metadata>
+		<![CDATA[ 
+        /** 
+         * @copy spark.skins.spark.ApplicationSkin#hostComponent
+         */
+        [HostComponent("spark.components.Button")]
+        ]]>
+	</fx:Metadata>
+
+	<!-- states -->
+	<s:states>
+		<s:State name="up"/>
+		<s:State name="over"/>
+		<s:State name="down"/>
+		<s:State name="disabled"/>
+	</s:states>
+	<s:transitions>
+		<s:Transition fromState="*"
+					  toState="*">
+			<s:Parallel duration="250">
+				<s:Fade targets="{[this,labelDisplay]}"/>
+				<s:Resize target="{bg}"/>
+			</s:Parallel>
+		</s:Transition>
+	</s:transitions>
+	<s:Rect id="bg"
+			top="0"
+			left="0"
+			right="0"
+			bottom="0"
+			topLeftRadiusX="0"
+			topLeftRadiusY="0"
+			topRightRadiusX="4"
+			topRightRadiusY="4"
+			bottomLeftRadiusX="0"
+			bottomLeftRadiusY="0"
+			bottomRightRadiusX="4"
+			bottomRightRadiusY="4">
+		<s:fill>
+			<s:SolidColor color="#000000"
+						  alpha=".65"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#666666"/>
+		</s:stroke>
+		<s:filters>
+			<s:BevelFilter angle="45"
+						   strength=".75"
+						   distance=".75"
+						   highlightAlpha="0.75"
+						   blurX="2"
+						   blurY="2"/>
+		</s:filters>
+	</s:Rect>
+	<s:HGroup top="10"
+			  right="10"
+			  bottom="10"
+			  left="10"
+			  verticalAlign="middle"
+			  gap="10">
+		<mangofactory:StyleImage styleName="back"/>
+		<s:Label id="labelDisplay"
+				 includeIn="over,down"
+				 maxDisplayedLines="1"
+				 fontFamily="segoeUI"
+				 fontSize="14"
+				 color="#FFFFFF"/>
+	</s:HGroup>
+
+</s:SparkSkin>

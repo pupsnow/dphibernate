@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   applicationComplete="onAppComplete(event)"
+			   minWidth="955"
+			   minHeight="600"
+			   xmlns:ac="adobe.ac.*"
+			   xmlns:view="com.mangofactory.pepper.view.*"
+			   xmlns:spicefactory="http://www.spicefactory.org/parsley"
+			   xmlns:dphibernate="http://www.dphibernate.org/2010/mxml">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<fx:Declarations>
+		<dphibernate:HibernateRemoteObject id="dataService"
+										   destination="dataService"
+										   bufferProxyLoadRequests="true"
+										   fault="faultHandler(event)"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.mangofactory.pepper.model.User;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.rpc.AsyncToken;
+			import mx.rpc.Responder;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.dphibernate.rpc.HibernateManaged;
+			
+			[Bindable]
+			public var questionList:ArrayCollection;
+
+			public function loadData():void {
+				var token:AsyncToken = dataService.getRecentPosts();
+				token.addResponder(new mx.rpc.Responder(resultHandler,faultHandler));
+			}
+			protected function resultHandler(event:ResultEvent):void
+			{
+				questionList = event.result as ArrayCollection;
+			}
+
+			protected function faultHandler(event:FaultEvent):void
+			{
+				Alert.show("Fault when loading data: " + event.fault.faultString);
+			}
+
+
+			protected function onAppComplete(event:FlexEvent):void
+			{
+				// Setup a default service.
+				// This is used by beans to perform dpHibernate operations (Save / Load, etc)
+				// where a service has not yet been assigned to the bean.
+				HibernateManaged.defaultHibernateService=dataService;
+				loadData();
+			}
+		]]>
+	</fx:Script>
+	<fx:Style source="styles.css"/>
+	<s:Rect top="0"
+			left="0"
+			right="0"
+			bottom="0">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry color="#84B4CB"/>
+				<s:GradientEntry color="#236B9B"/>
+				<s:GradientEntry color="#143143"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	<view:WorkspaceView top="15"
+						bottom="15"
+						left="15"
+						right="15"
+						questionList="{questionList}"/>
+</s:Application>

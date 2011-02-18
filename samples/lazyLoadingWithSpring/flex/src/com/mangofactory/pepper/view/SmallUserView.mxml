@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:view="com.mangofactory.pepper.view.*">
+	<fx:Script>
+		<![CDATA[
+			import assets.skins.LinkButtonSkin;
+			import com.mangofactory.pepper.model.util.GravatarUtil;
+			import com.mangofactory.pepper.model.User;
+			[Bindable]
+			public var user:User;
+
+			[Bindable]
+			public var label:String;
+		]]>
+	</fx:Script>
+	<s:HGroup>
+		<s:Label text="{this.label}"
+				 includeInLayout="{this.label != null}"
+				 styleName="lightHeading"/>
+		<view:SmallUserTile user="{user}"/>
+	</s:HGroup>
+</s:Group>

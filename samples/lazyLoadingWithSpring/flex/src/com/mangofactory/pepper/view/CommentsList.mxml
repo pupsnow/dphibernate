@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:spicefactory="http://www.spicefactory.org/parsley"
+		 currentState="{(post.comments != null &amp;&amp; post.comments.length > 0) ? 'hasComments' : 'noComments'}">
+	<s:states>
+		<s:State name="hasComments" />
+		<s:State name="noComments" />
+	</s:states>
+	<s:transitions>
+		<s:Transition fromState="*" toState="*">
+			<s:Parallel duration="250">
+				<s:Fade targets="{[bg,dgComments]}" />
+			</s:Parallel>
+		</s:Transition>
+	</s:transitions>
+	<fx:Declarations>
+		<spicefactory:Configure />
+	</fx:Declarations>
+	<fx:Metadata>
+		[Event(name="deleteComment",type="com.mangofactory.pepper.controller.events.DeleteCommentEvent")]
+	</fx:Metadata>
+	<fx:Script>
+		<![CDATA[
+			import com.mangofactory.pepper.model.Comment;
+			import com.mangofactory.pepper.model.Post;
+			
+			import mx.collections.ArrayCollection;
+			[Bindable]
+			public var post:Post;
+			
+		]]>
+	</fx:Script>
+	<s:Rect top="0"
+			left="0"
+			right="0"
+			bottom="0"
+			id="bg"
+			includeIn="hasComments">
+		<s:fill>
+			<s:SolidColor color="#666666"
+						  alpha="0.2"/>
+		</s:fill>
+		<s:stroke>
+			<s:SolidColorStroke color="#666666"/>
+		</s:stroke>
+		<s:filters>
+			<s:BevelFilter angle="45"
+						   strength=".75"
+						   distance=".75"
+						   highlightAlpha="0.75"
+						   blurX="2"
+						   blurY="2"/>
+		</s:filters>
+	</s:Rect>
+	<s:VGroup top="10"
+			  bottom="10"
+			  left="10"
+			  right="10"
+			  id="content">
+		<s:Label text="Comments" styleName="lightHeading" includeIn="hasComments" />
+		<s:DataGroup width="100%"
+					 dataProvider="{post.comments as IList}"
+					 itemRenderer="com.mangofactory.pepper.view.CommentRenderer"
+					 id="dgComments" visible="{this.currentState=='hasComments'}" includeInLayout="{this.currentState=='hasComments'}">
+			<s:layout>
+				<s:VerticalLayout/>
+			</s:layout>
+		</s:DataGroup>
+	</s:VGroup>
+</s:Group>

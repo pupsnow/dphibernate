@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009"
+			 xmlns:s="library://ns.adobe.com/flex/spark"
+			 xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+			 blendMode="normal"
+			 mouseEnabled="false"
+			 minWidth="131"
+			 minHeight="127"
+			 alpha.disabled="0.5"
+			 alpha.disabledWithControlBar="0.5">
+
+	<fx:Metadata>
+		<![CDATA[ 
+        /** 
+         * @copy spark.skins.spark.ApplicationSkin#hostComponent
+         */
+        [HostComponent("spark.components.Panel")]
+        ]]>
+	</fx:Metadata>
+
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="disabled"/>
+		<s:State name="normalWithControlBar"
+				 stateGroups="withControls"/>
+		<s:State name="disabledWithControlBar"
+				 stateGroups="withControls"/>
+	</s:states>
+	<s:filters>
+		<s:GlowFilter blurX='20'
+					  blurY='20'
+					  alpha='1'
+					  color='#000000'
+					  knockout='false'
+					  quality='4'
+					  strength='1'
+					  inner='false'/>
+	</s:filters>
+	<s:Rect top="0"
+			bottom="0"
+			left="0"
+			right="0">
+		<s:fill>
+			<s:SolidColor color="#000000"
+						  alpha="0.65"/>
+		</s:fill>
+	</s:Rect>
+	<s:Label id="titleDisplay"
+			 maxDisplayedLines="1"
+			 styleName="header"
+			 top="10"
+			 minHeight="30"
+			 left="15"
+			 verticalAlign="middle"
+			 color="#ffffff"/>
+	<s:Group id="contentGroup"
+			 top="45"
+			 bottom="15"
+			 left="15"
+			 right="15"
+			 minWidth="0"
+			 minHeight="0">
+	</s:Group>
+</s:SparkSkin>
