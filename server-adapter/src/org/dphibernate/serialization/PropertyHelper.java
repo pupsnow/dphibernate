@@ -57,7 +57,8 @@ public class PropertyHelper
 	}
 	public static boolean propertyNameIsExcluded(String propName)
 	{
-		return propName.equals("handler") || propName.equals("class") || propName.equals("hibernateLazyInitializer");
+		// Note - exclude proxyInitialized because we don't serialzie the value present on the class -- it's up to us to decide
+		return propName.equals("handler") || propName.equals("class") || propName.equals("hibernateLazyInitializer") || propName.equals("proxyInitialized");
 	}
 	public static boolean methodHasAnnotation(Method readMethod, Class<? extends Annotation> annotation)
 	{

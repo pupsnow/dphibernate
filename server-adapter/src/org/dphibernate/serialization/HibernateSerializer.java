@@ -77,6 +77,7 @@ import flex.messaging.io.amf.ASObject;
 public class HibernateSerializer extends AbstractSerializer
 {
 	private static final Log log = LogFactory.getLog(HibernateSerializer.class);
+	private static final int DEFAULT_PAGESIZE = -1;
 	public static Dialect dialect;
 
 
@@ -272,6 +273,8 @@ public class HibernateSerializer extends AbstractSerializer
 			{
 				asObject.put(HibernateProxyConstants.UID, UUID.randomUUID().toString());
 				asObject.put(HibernateProxyConstants.PROXYINITIALIZED, true);
+				Object primaryKey = ((IHibernateProxy) obj).getProxyKey();
+				asObject.put(HibernateProxyConstants.PKEY, primaryKey);
 			}
 			
 			// TODO : This chunk of code is being progressively moved to PropertyHelper.java
@@ -315,11 +318,6 @@ public class HibernateSerializer extends AbstractSerializer
 					ex.printStackTrace();
 				}
 			}
-			if (obj instanceof IHibernateProxy)
-			{
-				Object primaryKey = ((IHibernateProxy) obj).getProxyKey();
-				asObject.put(HibernateProxyConstants.PKEY, primaryKey);
-			}
 		} catch (Exception ex)
 		{
 			ex.printStackTrace();
@@ -339,7 +337,7 @@ public class HibernateSerializer extends AbstractSerializer
 		{
 			Object translatedCollectionMember;
 			Object collectionMemeberCacheKey = cache.getCacheKey(collectionMemeber);
-			if (getPageSize() != -1 && list.size() > getPageSize())
+			if (pageSize != DEFAULT_PAGESIZE && list.size() > pageSize)
 			{
 				translatedCollectionMember = getPagedCollectionProxy(collectionMemeber, collectionMemeberCacheKey);
 				isPaginated = true;
@@ -695,6 +693,7 @@ public class HibernateSerializer extends AbstractSerializer
 	@Override
 	public void configure(SerializerConfiguration configuration)
 	{
-		this.pageSize = configuration.getPageSize();
+		if (pageSize == DEFAULT_PAGESIZE)
+			this.pageSize = configuration.getPageSize();
 	}
 }
