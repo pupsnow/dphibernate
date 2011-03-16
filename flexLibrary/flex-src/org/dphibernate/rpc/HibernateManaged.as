@@ -148,7 +148,7 @@ package org.dphibernate.rpc
 					}
 				}
 			}
-			else if (object is ArrayCollection)
+			else if (object is IList)
 			{
 				manageArrayCollection(ArrayCollection(object));
 			}

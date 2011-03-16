@@ -125,7 +125,12 @@ package org.dphibernate.persistence.state
 			{
 				keyToUIDMap[key] = IManaged(object).uid;
 			}
-			storeComplexProperties(object);
+			if (objectIsNew)
+			{
+				generateFullChangeMessage(object);
+			} else {
+				storeComplexProperties(object);
+			}
 			return key;
 		}
 		

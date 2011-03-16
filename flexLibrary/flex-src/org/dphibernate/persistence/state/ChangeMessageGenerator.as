@@ -63,8 +63,7 @@ package org.dphibernate.persistence.state
 			var objectChangeMessage:ObjectChangeMessage;
 			objectChangeMessage=StateRepository.getStoredChanges(object);
 
-
-			if (objectChangeMessage && objectChangeMessage.numChanges > 0 || (objectChangeMessage && objectChangeMessage.numChanges == 0 && includeUnchangedObject))
+			if(shouldAppendObjectChangeMessage(objectChangeMessage,includeUnchangedObject))
 			{
 				objectChangeMessageCollection.add(objectChangeMessage);
 			}
@@ -78,6 +77,17 @@ package org.dphibernate.persistence.state
 			appendChangesOfChildren(object);
 
 			return objectChangeMessageCollection;
+		}
+
+		private function shouldAppendObjectChangeMessage(objectChangeMessage:ObjectChangeMessage,includeUnchangedObject:Boolean):Boolean
+		{
+			if (!objectChangeMessage)
+				return false;
+			
+			return (objectChangeMessage.hasChanges)
+				|| (objectChangeMessage.hasChanges == false && includeUnchangedObject)
+				|| (objectChangeMessage.isNew)
+				|| (objectChangeMessage.isDeleted)
 		}
 
 		internal function appendChangesOfChildren(object:IHibernateProxy):void
